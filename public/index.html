@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tampa Bay Builder Market Intelligence</title>
+<link rel="preconnect" href="https://unpkg.com"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--navy:#0b1f33;--blue:#176b87;--sky:#eaf5f8;--gold:#d7a93e;--ink:#182230;--muted:#667085;--line:#d7dee7;--bg:#f5f7fa;--white:#fff;--green:#16794f}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}header{background:linear-gradient(135deg,var(--navy),#123b56);color:#fff;padding:28px 22px}.wrap{max-width:1380px;margin:auto}h1{margin:0 0 8px;font-size:clamp(27px,4vw,44px)}header p{margin:0;max-width:980px;color:#dcebf2;line-height:1.55}main{padding:22px}.panel,.metric{background:#fff;border:1px solid var(--line);border-radius:14px}.panel{padding:16px}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}.metric{padding:14px}.metric span{display:block;color:var(--muted);font-size:13px}.metric strong{font-size:22px;display:block;margin-top:5px}.status{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-size:13px}.status b{color:var(--green)}.filters{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:10px;align-items:end}.filters2{display:grid;grid-template-columns:repeat(6,1fr) auto auto;gap:10px;align-items:end;margin-top:10px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:#344054}.field input,.field select{width:100%;padding:10px 11px;border:1px solid #bfc9d4;border-radius:10px;background:#fff;font:inherit}.btn{padding:10px 14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}.btn.secondary{background:#e9eef3;color:var(--ink)}.btn.active{background:var(--navy);color:#fff}.filter-note{font-size:11px;color:var(--muted);margin-top:4px}.heatmap-status{font-size:12px;color:var(--muted);margin-left:auto}.layout{display:grid;grid-template-columns:1.02fr .98fr;gap:16px;margin-top:16px}#map{height:650px;border-radius:14px;overflow:hidden;border:1px solid var(--line)}.tablebox{max-height:650px;overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:10px;z-index:2}td{padding:10px;border-bottom:1px solid #e6ebf0;vertical-align:top}tr{cursor:pointer}tr:hover{background:#f0f8fa}.zip{font-weight:800;color:var(--blue)}.areas,.small{font-size:12px;color:var(--muted);line-height:1.4}.money{font-variant-numeric:tabular-nums;white-space:nowrap}.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:var(--sky);color:#14556a;font-size:11px;font-weight:800}.note{margin-top:16px;font-size:13px;line-height:1.55;color:var(--muted)}.note strong{color:var(--ink)}.legend{background:#fff;padding:8px 10px;border-radius:9px;box-shadow:0 1px 6px #0002;font-size:12px;line-height:1.6}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}details{margin-top:14px}details summary{font-weight:800;cursor:pointer}code{background:#eef2f6;padding:2px 5px;border-radius:5px}
+@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}.filters,.filters2{grid-template-columns:repeat(3,1fr)}.layout{grid-template-columns:1fr}#map{height:520px}.tablebox{max-height:none}}@media(max-width:620px){.metrics,.filters,.filters2{grid-template-columns:1fr 1fr}main{padding:12px}}@media(max-width:430px){.metrics,.filters,.filters2{grid-template-columns:1fr}}
+</style></head>
+<body><header><div class="wrap"><h1>Tampa Bay Builder Market Intelligence</h1><p>All standard residential ZIP Code Tabulation Areas in Hillsborough, Pinellas and Pasco counties, designed for builders pursuing $500,000+ custom homes and major renovations. Filters, official ZIP boundary heatmaps, point markers, builder scores and summary metrics update immediately.</p></div></header>
+<main class="wrap"><div class="metrics" id="metrics"></div><div class="panel"><div class="status"><b id="dataStatus">Loading current Census data…</b><span id="dataDate"></span><button class="btn" id="refresh">Refresh Census data</button></div>
+<div class="filters">
+<div class="field"><label for="search">Search ZIP, city or neighborhood</label><input id="search" placeholder="33629, Hyde Park, Tierra Verde"></div>
+<div class="field"><label for="region">County</label><select id="region"><option value="">All counties</option><option>Hillsborough County</option><option>Pinellas County</option><option>Pasco County</option></select></div>
+<div class="field"><label for="income">Minimum household income</label><select id="income"><option value="0">Any</option><option value="75000">$75,000+</option><option value="100000">$100,000+</option><option value="125000">$125,000+</option><option value="150000">$150,000+</option><option value="200000">$200,000+</option></select></div>
+<div class="field"><label for="home">Minimum median home value</label><select id="home"><option value="0">Any</option><option value="300000">$300,000+</option><option value="500000">$500,000+</option><option value="750000">$750,000+</option><option value="1000000">$1,000,000+</option></select></div>
+<div class="field"><label for="share500">Homes valued $500K+</label><select id="share500"><option value="0">Any share</option><option value="10">10%+</option><option value="20">20%+</option><option value="35">35%+</option><option value="50">50%+</option></select></div>
+</div>
+<div class="filters2">
+<div class="field"><label for="share750">Homes valued $750K+</label><select id="share750"><option value="0">Any share</option><option value="5">5%+</option><option value="10">10%+</option><option value="20">20%+</option><option value="35">35%+</option></select></div>
+<div class="field"><label for="share1m">Homes valued $1M+</label><select id="share1m"><option value="0">Any share</option><option value="2">2%+</option><option value="5">5%+</option><option value="10">10%+</option><option value="20">20%+</option></select></div>
+<div class="field"><label for="pre1980">Homes built before 1980</label><select id="pre1980"><option value="0">Any share</option><option value="20">20%+</option><option value="35">35%+</option><option value="50">50%+</option><option value="65">65%+</option></select></div>
+<div class="field"><label for="population">Minimum population</label><select id="population"><option value="0">Any</option><option value="10000">10,000+</option><option value="25000">25,000+</option><option value="50000">50,000+</option><option value="75000">75,000+</option></select></div>
+<div class="field"><label for="market">Target strategy</label><select id="market"><option value="">All markets</option><option value="luxuryReno">Luxury renovation</option><option value="olderAffluent">Older affluent housing</option><option value="customGrowth">Custom-home growth</option><option value="highVolume">High-volume affluent</option></select></div>
+<button class="btn secondary" id="boundaries">Load ZIP heatmap</button>
+<div class="heatmap-status" id="boundaryStatus">Point map ready</div>
+</div>
+<div class="filters2">
+<div class="field"><label for="year">Median year built</label><select id="year"><option value="">Any</option><option value="pre1960">Before 1960</option><option value="pre1980">Before 1980</option><option value="pre2000">Before 2000</option><option value="post2000">2000 or newer</option><option value="post2010">2010 or newer</option></select></div>
+<div class="field"><label for="owner">Minimum owner occupancy</label><select id="owner"><option value="0">Any</option><option value="50">50%+</option><option value="65">65%+</option><option value="75">75%+</option><option value="85">85%+</option></select></div>
+<div class="field"><label for="project">Best project fit</label><select id="project"><option value="">All</option><option value="new">Custom home</option><option value="reno">Major renovation</option><option value="waterfront">Waterfront / luxury</option></select></div>
+<div class="field"><label for="score">Minimum opportunity score</label><select id="score"><option value="0">Any</option><option value="60">60+</option><option value="70">70+</option><option value="80">80+</option><option value="90">90+</option></select></div>
+<div class="field"><label for="sort">Sort by</label><select id="sort"><option value="score">Opportunity score</option><option value="income">Income</option><option value="home">Home value</option><option value="share500">$500K+ share</option><option value="yearBuilt">Oldest housing</option><option value="zip">ZIP</option></select></div>
+<div class="field"><label for="mapMetric">Map color</label><select id="mapMetric"><option value="score">Opportunity score</option><option value="income">Income</option><option value="home">Home value</option><option value="share500">$500K+ share</option><option value="share750">$750K+ share</option><option value="share1m">$1M+ share</option><option value="pre1980Pct">Pre-1980 housing</option><option value="renoScore">Renovation score</option><option value="newScore">Custom-home score</option></select></div>
+<button class="btn secondary" id="reset">Reset</button><button class="btn secondary" id="csv">Export filtered CSV</button>
+</div>
+<div class="layout"><div id="map" aria-label="Tampa Bay ZIP targeting map"></div><div class="tablebox"><table><thead><tr><th>ZIP / Area</th><th>Income</th><th>Home value</th><th>Luxury-home mix</th><th>Housing profile</th><th>Builder scores</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+<div class="note"><strong>Live data:</strong> the page queries the U.S. Census Bureau 2020–2024 ACS five-year API for median household income (B19013), median owner-occupied home value (B25077), owner occupancy (B25003), median year built (B25035), population, housing-age distribution (B25034), and owner-occupied values at $500,000+, $750,000+ and $1 million+ (B25075). ZIP boundary heatmaps come from Census TIGERweb. The annual ACS is authoritative but not a monthly market-price feed. ZIPs are Census ZCTAs, not exact USPS delivery boundaries. The score is a builder-targeting model, not a Census statistic.</div>
+<details><summary>Live market-price API options</summary><div class="note"><strong>Recommended production architecture:</strong> keep the Census API browser-side because it is public and keyless. For monthly values, listing activity, permits or parcel-level prospecting, use a scheduled serverless function so API keys remain private. Zillow Research and Redfin publish downloadable market files but do not provide a simple public browser API for this use. ATTOM and RentCast provide commercial APIs for valuations, transactions, ownership, tax and property characteristics. A serverless endpoint can normalize those feeds into one small JSON file consumed by this page.</div></details>
+</div></main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const data=[
+{zip:'33647',city:'Tampa',areas:'',region:'Hillsborough County',income:109285,home:null,lat:27.94260,lng:-82.45320,fit:['new', 'reno'],score:70},
+{zip:'33511',city:'Brandon',areas:'',region:'Hillsborough County',income:81301,home:null,lat:27.92980,lng:-82.28190,fit:['reno'],score:45},
+{zip:'33578',city:'Riverview',areas:'',region:'Hillsborough County',income:85921,home:null,lat:27.87410,lng:-82.33050,fit:['reno'],score:60},
+{zip:'33579',city:'Riverview',areas:'',region:'Hillsborough County',income:116134,home:null,lat:27.87810,lng:-82.33250,fit:['new'],score:70},
+{zip:'33612',city:'Tampa',areas:'',region:'Hillsborough County',income:47199,home:null,lat:27.94660,lng:-82.45520,fit:['reno'],score:45},
+{zip:'33617',city:'Tampa',areas:'',region:'Hillsborough County',income:50948,home:null,lat:27.96660,lng:-82.46520,fit:['reno'],score:45},
+{zip:'33614',city:'Tampa',areas:'',region:'Hillsborough County',income:50232,home:null,lat:27.95460,lng:-82.45920,fit:['reno'],score:45},
+{zip:'33615',city:'Tampa',areas:'',region:'Hillsborough County',income:69274,home:null,lat:27.95860,lng:-82.46120,fit:['reno'],score:45},
+{zip:'33610',city:'Tampa',areas:'',region:'Hillsborough County',income:54209,home:null,lat:27.93860,lng:-82.45120,fit:['reno'],score:45},
+{zip:'33619',city:'Tampa',areas:'',region:'Hillsborough County',income:66134,home:null,lat:27.93860,lng:-82.45120,fit:['reno'],score:45},
+{zip:'33624',city:'Tampa',areas:'',region:'Hillsborough County',income:87760,home:null,lat:27.95860,lng:-82.46120,fit:['reno'],score:60},
+{zip:'33604',city:'Tampa',areas:'',region:'Hillsborough County',income:58766,home:null,lat:27.95060,lng:-82.45720,fit:['reno'],score:45},
+{zip:'33613',city:'Tampa',areas:'',region:'Hillsborough County',income:44032,home:null,lat:27.95060,lng:-82.45720,fit:['reno'],score:45},
+{zip:'33594',city:'Valrico',areas:'',region:'Hillsborough County',income:96628,home:null,lat:27.93790,lng:-82.23640,fit:['reno'],score:60},
+{zip:'33611',city:'Tampa',areas:'',region:'Hillsborough County',income:90910,home:479800,lat:27.94260,lng:-82.45320,fit:['reno'],score:60},
+{zip:'33556',city:'Odessa',areas:'Odessa, Keystone',region:'Hillsborough County',income:149722,home:null,lat:28.18590,lng:-82.58780,fit:['new'],score:78},
+{zip:'33573',city:'Sun City Center',areas:'',region:'Hillsborough County',income:72834,home:null,lat:27.70610,lng:-82.34580,fit:['reno'],score:45},
+{zip:'33570',city:'Ruskin',areas:'',region:'Hillsborough County',income:72172,home:null,lat:27.73290,lng:-82.43920,fit:['reno'],score:45},
+{zip:'33558',city:'Lutz',areas:'',region:'Hillsborough County',income:116090,home:null,lat:28.15110,lng:-82.46150,fit:['new'],score:70},
+{zip:'33598',city:'Wimauma',areas:'',region:'Hillsborough County',income:97520,home:null,lat:27.72850,lng:-82.30640,fit:['reno'],score:60},
+{zip:'33547',city:'Lithia',areas:'Lithia, FishHawk',region:'Hillsborough County',income:123258,home:null,lat:27.84200,lng:-82.16600,fit:['new'],score:78},
+{zip:'33510',city:'Brandon',areas:'',region:'Hillsborough County',income:74245,home:null,lat:27.92580,lng:-82.27990,fit:['reno'],score:45},
+{zip:'33626',city:'Tampa / Westchase',areas:'Westchase, Waterchase, Highland Park',region:'Hillsborough County',income:127118,home:577100,lat:28.07200,lng:-82.62300,fit:['new', 'reno'],score:82},
+{zip:'33625',city:'Tampa',areas:'',region:'Hillsborough County',income:93133,home:null,lat:27.96260,lng:-82.46320,fit:['reno'],score:60},
+{zip:'33584',city:'Seffner',areas:'',region:'Hillsborough County',income:72267,home:null,lat:27.97960,lng:-82.27360,fit:['reno'],score:45},
+{zip:'33569',city:'Riverview',areas:'',region:'Hillsborough County',income:105275,home:null,lat:27.87410,lng:-82.33050,fit:['new'],score:70},
+{zip:'33618',city:'Tampa',areas:'',region:'Hillsborough County',income:84788,home:null,lat:27.93460,lng:-82.44920,fit:['reno'],score:45},
+{zip:'33596',city:'Valrico',areas:'',region:'Hillsborough County',income:116465,home:null,lat:27.94590,lng:-82.24040,fit:['new', 'reno'],score:70},
+{zip:'33629',city:'Tampa',areas:'Palma Ceia, Beach Park, Sunset Park, Culbreath Isles',region:'Hillsborough County',income:164355,home:851400,lat:27.94260,lng:-82.45320,fit:['new', 'reno', 'waterfront'],score:92},
+{zip:'33572',city:'Apollo Beach',areas:'Apollo Beach, MiraBay',region:'Hillsborough County',income:122130,home:null,lat:27.75710,lng:-82.39960,fit:['new', 'waterfront'],score:78},
+{zip:'33563',city:'Plant City',areas:'',region:'Hillsborough County',income:60131,home:226900,lat:28.00290,lng:-82.10670,fit:['reno'],score:45},
+{zip:'33607',city:'Tampa',areas:'',region:'Hillsborough County',income:69694,home:null,lat:27.96260,lng:-82.46320,fit:['reno'],score:45},
+{zip:'33606',city:'Tampa',areas:'Davis Islands, Hyde Park, Harbour Island',region:'Hillsborough County',income:120729,home:845600,lat:27.95860,lng:-82.46120,fit:['new', 'reno', 'waterfront'],score:92},
+{zip:'33566',city:'Plant City',areas:'',region:'Hillsborough County',income:72393,home:null,lat:28.01490,lng:-82.11270,fit:['reno'],score:45},
+{zip:'33634',city:'Tampa',areas:'',region:'Hillsborough County',income:74291,home:null,lat:27.96260,lng:-82.46320,fit:['reno'],score:45},
+{zip:'33602',city:'Tampa',areas:'',region:'Hillsborough County',income:97320,home:null,lat:27.94260,lng:-82.45320,fit:['reno'],score:60},
+{zip:'33603',city:'Tampa',areas:'',region:'Hillsborough County',income:74081,home:null,lat:27.94660,lng:-82.45520,fit:['reno'],score:45},
+{zip:'33635',city:'Tampa',areas:'',region:'Hillsborough County',income:86894,home:null,lat:27.96660,lng:-82.46520,fit:['reno'],score:60},
+{zip:'33559',city:'Lutz',areas:'',region:'Hillsborough County',income:80185,home:null,lat:28.15510,lng:-82.46350,fit:['new'],score:45},
+{zip:'33609',city:'Tampa',areas:'Beach Park, Swann Estates, Parkland Estates, Westshore',region:'Hillsborough County',income:115844,home:605600,lat:27.93460,lng:-82.44920,fit:['new', 'reno', 'waterfront'],score:82},
+{zip:'33549',city:'Lutz',areas:'',region:'Hillsborough County',income:89343,home:null,lat:28.15110,lng:-82.46150,fit:['new'],score:60},
+{zip:'33565',city:'Plant City',areas:'',region:'Hillsborough County',income:73414,home:null,lat:28.01090,lng:-82.11070,fit:['reno'],score:45},
+{zip:'33534',city:'Gibsonton',areas:'',region:'Hillsborough County',income:80484,home:null,lat:27.86560,lng:-82.38860,fit:['reno'],score:45},
+{zip:'33637',city:'Tampa',areas:'',region:'Hillsborough County',income:63323,home:null,lat:27.93860,lng:-82.45120,fit:['reno'],score:45},
+{zip:'33527',city:'Dover',areas:'',region:'Hillsborough County',income:80464,home:null,lat:27.97820,lng:-82.21150,fit:['reno'],score:45},
+{zip:'33605',city:'Tampa',areas:'',region:'Hillsborough County',income:36975,home:null,lat:27.95460,lng:-82.45920,fit:['reno'],score:45},
+{zip:'33616',city:'Tampa',areas:'',region:'Hillsborough County',income:93210,home:405500,lat:27.96260,lng:-82.46320,fit:['reno'],score:60},
+{zip:'33567',city:'Plant City',areas:'',region:'Hillsborough County',income:85643,home:null,lat:28.01890,lng:-82.11470,fit:['reno'],score:60},
+{zip:'33592',city:'Thonotosassa',areas:'',region:'Hillsborough County',income:68802,home:null,lat:28.05340,lng:-82.29830,fit:['reno'],score:45},
+{zip:'33548',city:'Lutz',areas:'',region:'Hillsborough County',income:129857,home:null,lat:28.14710,lng:-82.45950,fit:['new'],score:78},
+{zip:'33621',city:'Tampa',areas:'',region:'Hillsborough County',income:107188,home:null,lat:27.94660,lng:-82.45520,fit:['new', 'reno'],score:70},
+{zip:'34698',city:'Dunedin',areas:'',region:'Pinellas County',income:74078,home:null,lat:28.03570,lng:-82.77980,fit:['reno'],score:45},
+{zip:'34683',city:'Palm Harbor',areas:'',region:'Pinellas County',income:92885,home:null,lat:28.07010,lng:-82.75970,fit:['reno'],score:60},
+{zip:'33710',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:78611,home:null,lat:27.75560,lng:-82.63430,fit:['reno'],score:45},
+{zip:'33756',city:'Clearwater',areas:'',region:'Pinellas County',income:61872,home:null,lat:27.95790,lng:-82.79610,fit:['reno'],score:45},
+{zip:'33713',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:74707,home:null,lat:27.76760,lng:-82.64030,fit:['reno'],score:45},
+{zip:'33702',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:67463,home:null,lat:27.75960,lng:-82.63630,fit:['reno'],score:45},
+{zip:'33781',city:'Pinellas Park',areas:'',region:'Pinellas County',income:57785,home:null,lat:27.82680,lng:-82.69150,fit:['reno'],score:45},
+{zip:'33705',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:73027,home:null,lat:27.77160,lng:-82.64230,fit:['reno'],score:45},
+{zip:'33771',city:'Largo',areas:'',region:'Pinellas County',income:59993,home:171100,lat:27.92550,lng:-82.79530,fit:['reno'],score:45},
+{zip:'33755',city:'Clearwater',areas:'',region:'Pinellas County',income:62886,home:null,lat:27.95390,lng:-82.79410,fit:['reno'],score:45},
+{zip:'34689',city:'Tarpon Springs',areas:'',region:'Pinellas County',income:74854,home:null,lat:28.16210,lng:-82.76480,fit:['reno'],score:45},
+{zip:'33764',city:'Clearwater',areas:'',region:'Pinellas County',income:67256,home:null,lat:27.95390,lng:-82.79410,fit:['reno'],score:45},
+{zip:'33712',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:60450,home:null,lat:27.76360,lng:-82.63830,fit:['reno'],score:45},
+{zip:'34684',city:'Palm Harbor',areas:'',region:'Pinellas County',income:72145,home:null,lat:28.07410,lng:-82.76170,fit:['reno'],score:45},
+{zip:'33770',city:'Largo',areas:'',region:'Pinellas County',income:59815,home:null,lat:27.92150,lng:-82.79330,fit:['reno'],score:45},
+{zip:'33703',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:95224,home:null,lat:27.76360,lng:-82.63830,fit:['reno', 'waterfront'],score:60},
+{zip:'33709',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:53501,home:null,lat:27.75160,lng:-82.63230,fit:['reno'],score:45},
+{zip:'33707',city:'Gulfport / South Pasadena',areas:'',region:'Pinellas County',income:69951,home:null,lat:27.76700,lng:-82.74300,fit:['reno'],score:45},
+{zip:'33772',city:'Seminole',areas:'',region:'Pinellas County',income:73586,home:null,lat:27.82370,lng:-82.78320,fit:['reno'],score:45},
+{zip:'34677',city:'Oldsmar',areas:'',region:'Pinellas County',income:93474,home:null,lat:28.03820,lng:-82.66710,fit:['reno'],score:60},
+{zip:'33782',city:'Pinellas Park',areas:'',region:'Pinellas County',income:66461,home:null,lat:27.83080,lng:-82.69350,fit:['reno'],score:45},
+{zip:'33763',city:'Clearwater',areas:'',region:'Pinellas County',income:54794,home:null,lat:27.94990,lng:-82.79210,fit:['reno'],score:45},
+{zip:'33760',city:'Clearwater',areas:'',region:'Pinellas County',income:69596,home:null,lat:27.97390,lng:-82.80410,fit:['reno'],score:45},
+{zip:'33711',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:66540,home:null,lat:27.75960,lng:-82.63630,fit:['reno'],score:45},
+{zip:'33774',city:'Largo',areas:'',region:'Pinellas County',income:79139,home:null,lat:27.90150,lng:-82.78330,fit:['reno'],score:45},
+{zip:'33716',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:75226,home:null,lat:27.77960,lng:-82.64630,fit:['reno'],score:45},
+{zip:'33714',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:47487,home:null,lat:27.77160,lng:-82.64230,fit:['reno'],score:45},
+{zip:'33701',city:'Saint Petersburg',areas:'',region:'Pinellas County',income:73542,home:null,lat:27.75560,lng:-82.63430,fit:['reno'],score:45},
+{zip:'33777',city:'Seminole',areas:'',region:'Pinellas County',income:86375,home:null,lat:27.84370,lng:-82.79320,fit:['reno'],score:60},
+{zip:'33761',city:'Clearwater',areas:'',region:'Pinellas County',income:74728,home:null,lat:27.97790,lng:-82.80610,fit:['reno'],score:45},
+{zip:'34685',city:'Palm Harbor',areas:'',region:'Pinellas County',income:94688,home:null,lat:28.07810,lng:-82.76370,fit:['reno'],score:60},
+{zip:'34695',city:'Safety Harbor',areas:'',region:'Pinellas County',income:95238,home:null,lat:27.99490,lng:-82.69520,fit:['reno'],score:60},
+{zip:'33759',city:'Clearwater',areas:'',region:'Pinellas County',income:67492,home:null,lat:27.96990,lng:-82.80210,fit:['reno'],score:45},
+{zip:'33778',city:'Largo',areas:'',region:'Pinellas County',income:65355,home:null,lat:27.91750,lng:-82.79130,fit:['reno'],score:45},
+{zip:'33773',city:'Largo',areas:'',region:'Pinellas County',income:76867,home:null,lat:27.89750,lng:-82.78130,fit:['reno'],score:45},
+{zip:'33704',city:'Saint Petersburg',areas:'Snell Isle, Old Northeast, Coffee Pot Bayou',region:'Pinellas County',income:107889,home:753600,lat:27.76760,lng:-82.64030,fit:['new', 'reno', 'waterfront'],score:92},
+{zip:'33706',city:'St. Pete Beach',areas:'St. Pete Beach, Pass-a-Grille',region:'Pinellas County',income:104359,home:null,lat:27.73330,lng:-82.74520,fit:['new', 'reno', 'waterfront'],score:70},
+{zip:'33708',city:'Madeira Beach',areas:'',region:'Pinellas County',income:82500,home:null,lat:27.81410,lng:-82.80530,fit:['reno', 'waterfront'],score:45},
+{zip:'33765',city:'Clearwater',areas:'',region:'Pinellas County',income:69199,home:null,lat:27.95790,lng:-82.79610,fit:['reno'],score:45},
+{zip:'33776',city:'Seminole',areas:'',region:'Pinellas County',income:105337,home:null,lat:27.83970,lng:-82.79120,fit:['new', 'reno'],score:70},
+{zip:'34688',city:'Tarpon Springs',areas:'',region:'Pinellas County',income:112091,home:null,lat:28.15810,lng:-82.76280,fit:['new', 'reno'],score:70},
+{zip:'33767',city:'Clearwater Beach',areas:'Clearwater Beach, Sand Key',region:'Pinellas County',income:117425,home:839900,lat:27.97700,lng:-82.82700,fit:['new', 'reno', 'waterfront'],score:92},
+{zip:'33715',city:'Tierra Verde',areas:'Tierra Verde, Isla del Sol',region:'Pinellas County',income:102782,home:647800,lat:27.69900,lng:-82.72700,fit:['new', 'reno', 'waterfront'],score:82},
+{zip:'33762',city:'Clearwater',areas:'',region:'Pinellas County',income:87461,home:null,lat:27.98190,lng:-82.80810,fit:['reno'],score:60},
+{zip:'33785',city:'Indian Rocks Beach',areas:'Indian Rocks Beach',region:'Pinellas County',income:101356,home:null,lat:27.89600,lng:-82.84660,fit:['new', 'reno', 'waterfront'],score:70},
+{zip:'33786',city:'Belleair Beach',areas:'Belleair Beach, Belleair Shore',region:'Pinellas County',income:163125,home:1053000,lat:27.92790,lng:-82.84500,fit:['new', 'reno', 'waterfront'],score:92},
+{zip:'34655',city:'New Port Richey / Trinity',areas:'Trinity, New Port Richey',region:'Pasco County',income:85470,home:null,lat:28.16800,lng:-82.67500,fit:['reno'],score:60},
+{zip:'34668',city:'Port Richey',areas:'',region:'Pasco County',income:47401,home:null,lat:28.27570,lng:-82.72150,fit:['reno'],score:45},
+{zip:'33543',city:'Wesley Chapel',areas:'Wesley Chapel, Meadow Pointe',region:'Pasco County',income:107349,home:null,lat:28.25170,lng:-82.33390,fit:['new'],score:70},
+{zip:'34638',city:'Land O Lakes',areas:'',region:'Pasco County',income:123899,home:null,lat:28.21090,lng:-82.45360,fit:['new'],score:78},
+{zip:'34653',city:'New Port Richey',areas:'',region:'Pasco County',income:49563,home:null,lat:28.26020,lng:-82.72730,fit:['reno'],score:45},
+{zip:'34639',city:'Land O Lakes',areas:'',region:'Pasco County',income:101486,home:null,lat:28.21490,lng:-82.45560,fit:['new'],score:70},
+{zip:'34667',city:'Hudson',areas:'',region:'Pasco County',income:51280,home:null,lat:28.36440,lng:-82.69340,fit:['waterfront'],score:45},
+{zip:'33545',city:'Wesley Chapel',areas:'Wesley Chapel, Epperson',region:'Pasco County',income:118889,home:null,lat:28.22370,lng:-82.31990,fit:['new'],score:70},
+{zip:'33544',city:'Wesley Chapel',areas:'',region:'Pasco County',income:104573,home:434900,lat:28.25570,lng:-82.33590,fit:['new'],score:70},
+{zip:'34652',city:'New Port Richey',areas:'',region:'Pasco County',income:56931,home:null,lat:28.25620,lng:-82.72530,fit:['waterfront'],score:45},
+{zip:'33541',city:'Zephyrhills',areas:'',region:'Pasco County',income:56579,home:126000,lat:28.23760,lng:-82.18320,fit:['reno'],score:45},
+{zip:'34654',city:'New Port Richey',areas:'',region:'Pasco County',income:73947,home:null,lat:28.22820,lng:-82.71130,fit:['reno'],score:45},
+{zip:'33542',city:'Zephyrhills',areas:'',region:'Pasco County',income:49316,home:null,lat:28.24160,lng:-82.18520,fit:['reno'],score:45},
+{zip:'34691',city:'Holiday',areas:'',region:'Pasco County',income:50288,home:null,lat:28.17580,lng:-82.73350,fit:['reno'],score:45},
+{zip:'33525',city:'Dade City',areas:'',region:'Pasco County',income:69068,home:null,lat:28.37670,lng:-82.20190,fit:['reno'],score:45},
+{zip:'33523',city:'Dade City',areas:'',region:'Pasco County',income:64826,home:null,lat:28.36870,lng:-82.19790,fit:['reno'],score:45},
+{zip:'34610',city:'Spring Hill',areas:'',region:'Pasco County',income:77396,home:null,lat:28.46490,lng:-82.51950,fit:['reno'],score:45},
+{zip:'34669',city:'Hudson',areas:'',region:'Pasco County',income:58638,home:null,lat:28.37240,lng:-82.69740,fit:['reno'],score:45},
+{zip:'34637',city:'Land O Lakes',areas:'',region:'Pasco County',income:115214,home:null,lat:28.20690,lng:-82.45160,fit:['new'],score:70},
+{zip:'34690',city:'Holiday',areas:'',region:'Pasco County',income:49401,home:null,lat:28.17180,lng:-82.73150,fit:['reno'],score:45},
+{zip:'33540',city:'Zephyrhills',areas:'',region:'Pasco County',income:56387,home:null,lat:28.23360,lng:-82.18120,fit:['reno'],score:45},
+{zip:'33576',city:'San Antonio',areas:'',region:'Pasco County',income:76388,home:null,lat:28.33610,lng:-82.27450,fit:['reno'],score:45}
+];
+const ACS_YEAR=2024;
+const ACS_VARS=['NAME','B01003_001E','B19013_001E','B25077_001E','B25003_001E','B25003_002E','B25035_001E','B25075_001E','B25075_023E','B25075_024E','B25075_025E','B25075_026E','B25075_027E','B25034_001E','B25034_007E','B25034_008E','B25034_009E','B25034_010E','B25034_011E'];
+const money=n=>n==null||!Number.isFinite(n)?'N/A':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+const pct=n=>n==null||!Number.isFinite(n)?'N/A':`${n.toFixed(1)}%`;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function recompute(d){
+ const incomeScore=clamp((d.income-50000)/150000*100,0,100), homeScore=clamp((d.home-250000)/1000000*100,0,100);
+ const share500Score=clamp((d.share500||0)*1.35,0,100), share750Score=clamp((d.share750||0)*2.0,0,100), share1mScore=clamp((d.share1m||0)*3.0,0,100);
+ const ownerScore=clamp((d.ownerPct||0),0,100), oldStock=clamp((d.pre1980Pct||0)*1.35,0,100), growthStock=d.yearBuilt?clamp((d.yearBuilt-1975)/50*100,0,100):40;
+ const scaleScore=clamp(((d.population||0)-5000)/70000*100,0,100);
+ d.renoScore=Math.round(.22*homeScore+.18*incomeScore+.17*share750Score+.13*share1mScore+.12*ownerScore+.13*oldStock+.05*scaleScore);
+ d.newScore=Math.round(.24*incomeScore+.22*homeScore+.16*share750Score+.12*share1mScore+.10*ownerScore+.11*growthStock+.05*scaleScore);
+ const waterfront=d.fit.includes('waterfront')?8:0; d.score=clamp(Math.round(Math.max(d.renoScore,d.newScore)+waterfront),0,100);
+ if(d.newScore>=d.renoScore&&!d.fit.includes('new'))d.fit.push('new'); if(d.renoScore>=55&&!d.fit.includes('reno'))d.fit.push('reno');
+}
+async function loadACS(){
+ const status=document.getElementById('dataStatus');status.textContent='Loading current Census data…';
+ try{const url=`https://api.census.gov/data/${ACS_YEAR}/acs/acs5?get=${ACS_VARS.join(',')}&for=zip%20code%20tabulation%20area:*`;const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);const json=await r.json(),head=json[0],idx=Object.fromEntries(head.map((x,i)=>[x,i])),wanted=new Map(data.map(d=>[d.zip,d]));let updated=0;
+ for(const row of json.slice(1)){const z=row[idx['zip code tabulation area']],d=wanted.get(z);if(!d)continue;const n=k=>{const v=Number(row[idx[k]]);return v<0||!Number.isFinite(v)?null:v};d.population=n('B01003_001E');d.income=n('B19013_001E');d.home=n('B25077_001E');d.yearBuilt=n('B25035_001E');const occ=n('B25003_001E'),own=n('B25003_002E');d.ownerPct=occ?own/occ*100:null;const total=n('B25075_001E'),sum=ks=>ks.reduce((s,k)=>s+(n(k)||0),0);d.share500=total?sum(['B25075_023E','B25075_024E','B25075_025E','B25075_026E','B25075_027E'])/total*100:null;d.share750=total?sum(['B25075_024E','B25075_025E','B25075_026E','B25075_027E'])/total*100:null;d.share1m=total?sum(['B25075_025E','B25075_026E','B25075_027E'])/total*100:null;const builtTotal=n('B25034_001E'),oldBuilt=sum(['B25034_007E','B25034_008E','B25034_009E','B25034_010E','B25034_011E']);d.pre1980Pct=builtTotal?oldBuilt/builtTotal*100:null;recompute(d);updated++;}
+ status.textContent=`Live Census data loaded for ${updated} ZIPs`;document.getElementById('dataDate').textContent=`ACS ${ACS_YEAR} five-year estimates`;render();
+ }catch(e){status.textContent='Live refresh unavailable; showing embedded fallback data';document.getElementById('dataDate').textContent=e.message;data.forEach(recompute);render();}
+}
+const map=L.map('map').setView([27.95,-82.55],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);const layer=L.layerGroup().addTo(map);let markerByZip={},zipGeoLayer=null,zipGeoJSON=null,boundaryLoaded=false;
+function colorScale(v,metric){const ranges={score:[55,70,82],income:[75000,110000,150000],home:[350000,550000,800000],share500:[10,25,45],share750:[5,15,30],share1m:[2,8,18],pre1980Pct:[20,40,60],renoScore:[55,70,82],newScore:[55,70,82]}[metric];if(v==null)return '#9aa4b2';if(v>=ranges[2])return '#0b1f33';if(v>=ranges[1])return '#176b87';if(v>=ranges[0])return '#d7a93e';return '#7b8794'}
+function filtered(){
+ const q=search.value.trim().toLowerCase(),reg=region.value,minI=+income.value,minH=+home.value,minShare=+share500.value,min750=+share750.value,min1m=+share1m.value,minOld=+pre1980.value,minPop=+population.value,minO=+owner.value,proj=project.value,minS=+score.value,y=year.value,strategy=market.value;
+ let out=data.filter(d=>(!q||`${d.zip} ${d.city} ${d.areas}`.toLowerCase().includes(q))&&(!reg||d.region===reg)&&(d.income||0)>=minI&&(!minH||(d.home||0)>=minH)&&(!minShare||(d.share500||0)>=minShare)&&(!min750||(d.share750||0)>=min750)&&(!min1m||(d.share1m||0)>=min1m)&&(!minOld||(d.pre1980Pct||0)>=minOld)&&(!minPop||(d.population||0)>=minPop)&&(!minO||(d.ownerPct||0)>=minO)&&(!proj||d.fit.includes(proj))&&(d.score||0)>=minS);
+ if(y)out=out.filter(d=>d.yearBuilt&&(y==='pre1960'?d.yearBuilt<1960:y==='pre1980'?d.yearBuilt<1980:y==='pre2000'?d.yearBuilt<2000:y==='post2000'?d.yearBuilt>=2000:d.yearBuilt>=2010));
+ if(strategy==='luxuryReno')out=out.filter(d=>(d.renoScore||0)>=70&&(d.share750||0)>=10); if(strategy==='olderAffluent')out=out.filter(d=>(d.pre1980Pct||0)>=35&&(d.income||0)>=90000); if(strategy==='customGrowth')out=out.filter(d=>(d.newScore||0)>=70&&(d.yearBuilt||0)>=1995); if(strategy==='highVolume')out=out.filter(d=>(d.population||0)>=35000&&(d.income||0)>=90000&&(d.share500||0)>=15);
+ const s=sort.value;out.sort((a,b)=>s==='zip'?a.zip.localeCompare(b.zip):s==='yearBuilt'?(a.yearBuilt||9999)-(b.yearBuilt||9999):(b[s]||-1)-(a[s]||-1));return out
+}
+async function loadBoundaries(){
+ const status=document.getElementById('boundaryStatus');status.textContent='Loading official Census ZIP boundaries…';boundaries.disabled=true;
+ try{const zips=data.map(d=>`'${d.zip}'`).join(','),where=encodeURIComponent(`ZCTA5 IN (${zips})`);const url=`https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2024/MapServer/2/query?where=${where}&outFields=ZCTA5&returnGeometry=true&outSR=4326&f=geojson&maxAllowableOffset=0.0008`;const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);zipGeoJSON=await r.json();if(!zipGeoJSON.features?.length)throw new Error('No boundary features returned');boundaryLoaded=true;boundaries.textContent='Hide ZIP heatmap';boundaries.classList.add('active');status.textContent=`Official boundary heatmap loaded (${zipGeoJSON.features.length} ZIPs)`;render();}
+ catch(e){status.textContent=`Boundary service unavailable: ${e.message}`;boundaries.disabled=false;}
+}
+function drawPolygons(rows,metric){if(zipGeoLayer){map.removeLayer(zipGeoLayer);zipGeoLayer=null}if(!boundaryLoaded||!zipGeoJSON)return;const visible=new Map(rows.map(d=>[d.zip,d]));zipGeoLayer=L.geoJSON(zipGeoJSON,{style:f=>{const d=visible.get(f.properties.ZCTA5),v=d?.[metric];return{color:d?'#ffffff':'transparent',weight:d?1.2:0,fillColor:d?colorScale(v,metric):'transparent',fillOpacity:d?.6:0}},onEachFeature:(f,l)=>{const d=visible.get(f.properties.ZCTA5);if(d)l.bindPopup(`<strong>${d.zip} — ${d.city}</strong><br>${d.areas||''}<br><br>Income: <strong>${money(d.income)}</strong><br>Median home value: <strong>${money(d.home)}</strong><br>$750K+ homes: <strong>${pct(d.share750)}</strong><br>$1M+ homes: <strong>${pct(d.share1m)}</strong><br>Pre-1980 housing: <strong>${pct(d.pre1980Pct)}</strong><br>Reno score: <strong>${d.renoScore}/100</strong><br>Custom-home score: <strong>${d.newScore}/100</strong>`);}}).addTo(map);zipGeoLayer.bringToBack();}
+
+function render(){const rows=filtered(),metric=mapMetric.value;layer.clearLayers();drawPolygons(rows,metric);markerByZip={};const bounds=[];for(const d of rows){const val=d[metric],m=L.circleMarker([d.lat,d.lng],{radius:8,weight:2,color:'#fff',fillColor:colorScale(val,metric),fillOpacity:.92}).bindPopup(`<strong>${d.zip} — ${d.city}</strong><br>${d.areas||''}<br><br>Income: <strong>${money(d.income)}</strong><br>Median home value: <strong>${money(d.home)}</strong><br>Homes $500K+: <strong>${pct(d.share500)}</strong><br>Owner occupied: <strong>${pct(d.ownerPct)}</strong><br>Median year built: <strong>${d.yearBuilt||'N/A'}</strong><br>Opportunity score: <strong>${d.score}/100</strong>`).addTo(layer);markerByZip[d.zip]=m;bounds.push([d.lat,d.lng])}if(bounds.length)map.fitBounds(bounds,{padding:[25,25],maxZoom:12});
+ document.getElementById('rows').innerHTML=rows.map(d=>`<tr data-zip="${d.zip}"><td><div class="zip">${d.zip}</div><div>${d.city}</div><div class="areas">${d.areas||''}</div><span class="badge">${d.region}</span></td><td class="money">${money(d.income)}</td><td class="money">${money(d.home)}</td><td><div>$500K+: <strong>${pct(d.share500)}</strong></div><div>$750K+: <strong>${pct(d.share750)}</strong></div><div>$1M+: <strong>${pct(d.share1m)}</strong></div></td><td><div>Median built: <strong>${d.yearBuilt||'N/A'}</strong></div><div>Pre-1980: <strong>${pct(d.pre1980Pct)}</strong></div><div>Owner occupied: <strong>${pct(d.ownerPct)}</strong></div><div class="small">Population: ${d.population?d.population.toLocaleString():'N/A'}</div></td><td><strong>${d.score}/100 overall</strong><div class="small">Renovation ${d.renoScore||0} · Custom ${d.newScore||0}</div></td></tr>`).join('')||'<tr><td colspan="6">No ZIP codes match.</td></tr>';
+ const avg=k=>{const a=rows.map(d=>d[k]).filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null};metrics.innerHTML=`<div class="metric"><span>ZIPs shown</span><strong>${rows.length}</strong></div><div class="metric"><span>Average median income</span><strong>${money(avg('income'))}</strong></div><div class="metric"><span>Average median home value</span><strong>${money(avg('home'))}</strong></div><div class="metric"><span>Average $750K+ share</span><strong>${pct(avg('share750'))}</strong></div><div class="metric"><span>Average opportunity score</span><strong>${avg('score')?Math.round(avg('score')):0}/100</strong></div>`;
+ document.querySelectorAll('tr[data-zip]').forEach(tr=>tr.addEventListener('click',()=>{const m=markerByZip[tr.dataset.zip];if(m){map.setView(m.getLatLng(),13);m.openPopup()}}));}
+const ids=['search','region','income','home','share500','share750','share1m','pre1980','population','market','year','owner','project','score','sort','mapMetric'];ids.forEach(id=>document.getElementById(id).addEventListener(id==='search'?'input':'change',render));reset.addEventListener('click',()=>{search.value='';region.value='';income.value='0';home.value='0';share500.value='0';share750.value='0';share1m.value='0';pre1980.value='0';population.value='0';market.value='';year.value='';owner.value='0';project.value='';score.value='0';sort.value='score';mapMetric.value='score';render()});boundaries.addEventListener('click',()=>{if(!boundaryLoaded){loadBoundaries();return}boundaryLoaded=false;if(zipGeoLayer){map.removeLayer(zipGeoLayer);zipGeoLayer=null}boundaries.textContent='Load ZIP heatmap';boundaries.classList.remove('active');boundaryStatus.textContent='Point map ready';render()});refresh.addEventListener('click',loadACS);csv.addEventListener('click',()=>{const rows=filtered(),cols=['zip','city','region','income','home','share500','share750','share1m','pre1980Pct','ownerPct','yearBuilt','population','renoScore','newScore','score'];const esc=v=>`"${String(v??'').replaceAll('"','""')}"`;const txt=[cols.join(','),...rows.map(d=>cols.map(c=>esc(d[c])).join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv'}));a.download='tampa-bay-builder-targets.csv';a.click();URL.revokeObjectURL(a.href)});
+const legend=L.control({position:'bottomright'});legend.onAdd=()=>{const x=L.DomUtil.create('div','legend');x.innerHTML='<b>Map colors</b><br><span class="dot" style="background:#0b1f33"></span>Highest tier<br><span class="dot" style="background:#176b87"></span>High tier<br><span class="dot" style="background:#d7a93e"></span>Middle tier<br><span class="dot" style="background:#7b8794"></span>Lower tier';return x};legend.addTo(map);data.forEach(recompute);render();loadACS();
+</script></body></html>
