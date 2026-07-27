@@ -1,0 +1,35 @@
+{
+  "name": "tampa-bay-builder-intelligence",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Tampa Bay builder market intelligence platform.",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"node --watch server/index.js\"",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "check": "node scripts/check.js",
+    "refresh:data": "node scripts/refresh-data.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "leaflet": "^1.9.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.16",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
