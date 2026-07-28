@@ -1,5 +1,5 @@
 node_modules/
-dist/
+# dist/ intentionally committed — Railway serves the pre-built frontend directly
 data/
 *.sqlite
 *.sqlite-*

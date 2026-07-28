@@ -1,289 +1,419 @@
-/* ------------------------------- FAQ / Legend view ------------------------------- */
+/* ------------------------------- FAQ / Legend / Methodology view ------------------------------- */
 export function FaqView() {
   return (
     <div className="faqPage">
 
-      {/* ── WHAT IS THIS TOOL ── */}
-      <section className="faqSection">
-        <h2>What is this tool?</h2>
+      {/* ── OVERVIEW ── */}
+      <section className="faqSection faqHero">
+        <h2>📋 Overview — What Is This Tool?</h2>
         <p>
           This is a <strong>renovation and custom-home ad-targeting intelligence platform</strong> built
-          specifically for Tampa Bay area builders. It ranks every ZIP code in Hillsborough, Pinellas,
-          Pasco, Manatee, and Sarasota counties by how likely homeowners in that area can afford and
-          are likely to commission a major renovation ($250K+) or custom home build ($500K+).
+          specifically for Tampa Bay area builders. It ranks every ZIP code across Hillsborough, Pinellas,
+          Pasco, Manatee, and Sarasota counties by how likely homeowners in that area can afford and are
+          likely to commission a major renovation ($250K+) or custom home build ($500K+).
         </p>
         <p>
-          Use it to decide <strong>where to spend your ad budget</strong>, which neighborhoods to
-          target with direct mail, and which ZIP codes to prioritize for door-knocking or Google/Meta
-          geo-targeting campaigns.
+          Use it to decide <strong>where to spend your ad budget</strong>, which neighborhoods to target
+          with direct mail, and which ZIP codes to prioritize for Google/Meta geo-targeting campaigns.
+          Every ZIP is scored, ranked, and assigned to one of three ad tiers so you can act immediately
+          without needing a data analyst.
+        </p>
+        <div className="heroStats">
+          <div className="heroStat"><strong>150</strong><span>Tampa Bay ZIPs ranked</span></div>
+          <div className="heroStat"><strong>5</strong><span>Counties covered</span></div>
+          <div className="heroStat"><strong>3</strong><span>Ad targeting tiers</span></div>
+          <div className="heroStat"><strong>2023</strong><span>ACS Census vintage</span></div>
+        </div>
+      </section>
+
+      {/* ── METHODOLOGY ── */}
+      <section className="faqSection">
+        <h2>🔬 Methodology — How We Built This</h2>
+
+        <h3>Step 1 — Define the Target Market</h3>
+        <p>
+          The goal is to identify homeowners who can afford and are likely to commission renovation or
+          custom build projects of $250K or more. Research on renovation spending patterns shows that
+          households need to meet <em>at least two</em> of three conditions to reliably commission
+          high-budget work:
+        </p>
+        <table className="faqTable">
+          <thead><tr><th>Condition</th><th>Threshold</th><th>Why It Matters</th></tr></thead>
+          <tbody>
+            <tr><td>Household income</td><td>≥ $90K/year</td><td>Renovation financing and discretionary spend capacity</td></tr>
+            <tr><td>Home market value</td><td>≥ $350K</td><td>Homeowners rarely spend more on renovation than the home is worth</td></tr>
+            <tr><td>Owner-occupied</td><td>≥ 60% of units</td><td>Only owners commission renovations — renters do not</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Step 2 — Select the Geographic Scope</h3>
+        <p>
+          The platform covers all ZIP codes in the five-county Tampa Bay metro area: <strong>Hillsborough</strong>
+          (52 ZIPs), <strong>Pinellas</strong> (48 ZIPs), <strong>Pasco</strong> (22 ZIPs),{' '}
+          <strong>Manatee</strong> (15 ZIPs), and <strong>Sarasota</strong> (13 ZIPs). The geographic
+          filter uses the USPS ZIP code boundaries for Florida, cross-referenced against county FIPS
+          codes to ensure complete coverage including the <code>346xx</code> Pinellas/Pasco corridor
+          (Palm Harbor, Trinity, Safety Harbor, Oldsmar) which is frequently missed by simpler filters.
+        </p>
+
+        <h3>Step 3 — Source the Data</h3>
+        <p>
+          All demographic data comes from the <strong>US Census Bureau American Community Survey (ACS)
+          5-Year Estimates, 2023 vintage</strong> — the most current ZIP-level dataset available. The
+          ACS 5-year estimates are used (rather than 1-year) because they provide statistically reliable
+          estimates for small geographies like ZIP codes, which have populations too small for the 1-year
+          survey to produce reliable numbers. Each data point is pulled from a specific ACS table:
+        </p>
+        <table className="faqTable">
+          <thead><tr><th>Data Point</th><th>ACS Table</th><th>Variable</th></tr></thead>
+          <tbody>
+            <tr><td>Median Household Income</td><td>B19013</td><td>B19013_001E</td></tr>
+            <tr><td>Median Home Value (owner-occupied)</td><td>B25077</td><td>B25077_001E</td></tr>
+            <tr><td>Owner Occupancy Rate</td><td>B25003</td><td>B25003_002E / B25003_001E</td></tr>
+            <tr><td>Median Year Structure Built</td><td>B25035</td><td>B25035_001E</td></tr>
+            <tr><td>Total Population</td><td>B01003</td><td>B01003_001E</td></tr>
+            <tr><td>Home Value Distribution (for Luxury %)</td><td>B25075</td><td>Buckets $750K–$1M, $1M–$1.5M, $1.5M+</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Step 4 — Calculate the Scores</h3>
+        <p>
+          Three composite scores are calculated for each ZIP. All inputs are normalized to a 0–100 scale
+          relative to the full Tampa Bay dataset before weighting, so a score of 100 would represent the
+          theoretical maximum for this region.
+        </p>
+
+        <div className="methodBlock">
+          <div className="methodTitle">Budget Score (Primary Ranking Score)</div>
+          <div className="methodFormula">
+            Budget Score = (Income Score × 0.40) + (Home Value Score × 0.40) + (Owner Occupancy Score × 0.20)
+          </div>
+          <p className="methodNote">
+            <strong>Income Score:</strong> Normalized from $0–$250K range. $164K (South Tampa) = ~66, $50K = ~20.<br/>
+            <strong>Home Value Score:</strong> Normalized from $0–$1.5M range. $1.2M (Siesta Key) = ~80, $200K = ~13.<br/>
+            <strong>Owner Occupancy Score:</strong> Normalized from 0–100%. 85% owner-occupied = 85 score.<br/>
+            Income and home value are weighted equally at 40% each because both are strong independent
+            predictors — high income with a modest home (condo owner) and high home value with moderate
+            income (inherited property) both produce renovation clients.
+          </p>
+        </div>
+
+        <div className="methodBlock">
+          <div className="methodTitle">Renovation Score</div>
+          <div className="methodFormula">
+            Reno Score = (Age Score × 0.35) + (Home Value Score × 0.30) + (Owner Occupancy Score × 0.20) + (Luxury Share Score × 0.15)
+          </div>
+          <p className="methodNote">
+            <strong>Age Score:</strong> Homes built before 1970 score highest (100). Built 2020+ score lowest (0).
+            Formula: max(0, (2024 − medianYearBuilt − 10) / 60 × 100).<br/>
+            <strong>Luxury Share Score:</strong> % of homes valued over $750K, normalized to 0–100.<br/>
+            Age is the dominant factor (35%) because it directly drives renovation necessity — old homes
+            need new kitchens, baths, electrical, and HVAC regardless of owner income.
+          </p>
+        </div>
+
+        <div className="methodBlock">
+          <div className="methodTitle">Opportunity Score (Composite)</div>
+          <div className="methodFormula">
+            Opportunity = (Reno Score × 0.35) + (Income Score × 0.25) + (Home Value Score × 0.20) + (Growth Bonus × 0.10) + (Waterfront Bonus × 0.10)
+          </div>
+          <p className="methodNote">
+            <strong>Growth Bonus:</strong> Population growth rate normalized 0–100 (1.5%+/year = high bonus).<br/>
+            <strong>Waterfront Bonus:</strong> Binary flag — waterfront ZIPs receive a fixed 15-point bonus
+            because waterfront properties command 20–50% value premiums and owners routinely invest in
+            dock additions, outdoor living, and full gut-renovations.<br/>
+            The Opportunity Score is the overall tiebreaker — use it when two ZIPs have similar Budget Scores.
+          </p>
+        </div>
+
+        <h3>Step 5 — Assign Ad Tiers</h3>
+        <p>
+          Tiers are assigned based on a combination of Budget Score and absolute thresholds, not purely
+          on relative rank. This ensures that a ZIP with genuinely low income doesn't get labeled Tier 1
+          just because it's the best in a weak county.
+        </p>
+        <table className="faqTable">
+          <thead><tr><th>Tier</th><th>Budget Score</th><th>AND Median Income</th><th>AND Median Home Value</th></tr></thead>
+          <tbody>
+            <tr className="tier1row"><td><strong>Tier 1</strong> — $500K+ Renovations</td><td>≥ 35</td><td>≥ $110,000</td><td>≥ $550,000</td></tr>
+            <tr className="tier2row"><td><strong>Tier 2</strong> — $250K–$500K Renovations</td><td>≥ 15</td><td>≥ $65,000</td><td>≥ $280,000</td></tr>
+            <tr className="tier3row"><td><strong>Tier 3</strong> — Monitor</td><td colspan="3">All other ZIPs — watch for growth signals</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Step 6 — Enrich with Flags</h3>
+        <p>
+          Two enrichment flags are applied after scoring:
+        </p>
+        <p>
+          <strong>🌊 Waterfront:</strong> Assigned via geographic analysis of ZIP code boundaries against
+          known waterfront corridors — Tampa Bay shoreline, Gulf Coast barrier islands, and major inland
+          lakes. ZIPs with significant waterfront frontage include Longboat Key (34228), Siesta Key (34242),
+          Tierra Verde (33715), St. Pete Beach (33706), Clearwater Beach (33767), and others.
+        </p>
+        <p>
+          <strong>📈 Growing:</strong> Assigned to ZIPs with population growth rate above 1.5% annually,
+          derived from comparing ACS 2019 and 2023 population estimates. Growth markets attract move-up
+          buyers who renovate before or after purchase.
+        </p>
+      </section>
+
+      {/* ── DATA SOURCING ── */}
+      <section className="faqSection">
+        <h2>📦 Data Sources — Where Every Number Comes From</h2>
+
+        <table className="faqTable">
+          <thead>
+            <tr><th>Data Point</th><th>Source</th><th>How We Got It</th><th>Vintage</th><th>Refresh</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Median Household Income</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>API call to <code>api.census.gov/data/2023/acs/acs5</code>, table B19013, filtered to Florida ZIP Code Tabulation Areas (ZCTAs). ZCTA boundaries are used as the best available proxy for USPS ZIP codes.</td>
+              <td>2023</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Median Home Value</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>Same API call, table B25077. This is the self-reported estimated market value of owner-occupied housing units, not sale prices. It lags actual market prices by 12–18 months but is the only ZIP-level dataset with complete coverage.</td>
+              <td>2023</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Owner Occupancy Rate</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>Table B25003: owner-occupied units (B25003_002E) divided by total occupied units (B25003_001E), expressed as a percentage.</td>
+              <td>2023</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Median Year Built</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>Table B25035: median year structure built for all housing units in the ZCTA. This includes all housing types (single-family, multi-family, condos). For renovation targeting, single-family homes are the primary target but this metric is still highly predictive at the ZIP level.</td>
+              <td>2023</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Luxury Share %</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>Table B25075 (home value distribution). We sum the counts in the $750K–$999K, $1M–$1.499M, and $1.5M+ buckets, then divide by total owner-occupied units. This gives the share of homes in the luxury tier for each ZIP.</td>
+              <td>2023</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Population &amp; Growth Rate</strong></td>
+              <td>US Census Bureau — ACS 5-Year</td>
+              <td>Table B01003 (total population) for 2019 and 2023 vintages. Growth rate = (pop2023 − pop2019) / pop2019 / 4 years, annualized.</td>
+              <td>2023 vs 2019</td>
+              <td>Annual (December)</td>
+            </tr>
+            <tr>
+              <td><strong>Waterfront Flag</strong></td>
+              <td>Geographic analysis</td>
+              <td>Manual classification based on ZIP code boundaries overlaid with Tampa Bay shoreline, Gulf of Mexico barrier islands, and major inland water bodies (Lake Tarpon, Lake Maggiore, etc.). Verified against known waterfront communities and real estate listings.</td>
+              <td>Static</td>
+              <td>Manual review annually</td>
+            </tr>
+            <tr>
+              <td><strong>Permit Activity</strong></td>
+              <td>Hillsborough County &amp; City of Tampa Open Data Portals</td>
+              <td>Fetched via Socrata API (<code>gis.hillsboroughcounty.org</code>) and Tampa ArcGIS REST API. Filters for permit types: new construction, addition, remodel, renovation. Aggregated by ZIP code and permit value bucket.</td>
+              <td>Live</td>
+              <td>Nightly (cron job)</td>
+            </tr>
+            <tr>
+              <td><strong>Property Detail</strong></td>
+              <td>ATTOM Data Solutions + RentCast</td>
+              <td>On-demand lookup via REST API when a user searches a specific address in the Property Lookup tab. ATTOM provides AVM (automated valuation), ownership history, and lot details. RentCast provides rental comps and estimated rent. Results are cached in SQLite for 7 days to minimize API costs. Mock data is returned when no API keys are configured.</td>
+              <td>Live</td>
+              <td>7-day cache per address</td>
+            </tr>
+            <tr>
+              <td><strong>AI Explanations</strong></td>
+              <td>OpenAI GPT-4o-mini</td>
+              <td>When the ✨ Explain button is clicked, the ZIP's full data object is sent to GPT-4o-mini with a structured prompt that instructs it to explain the score in plain builder language. If no OpenAI API key is configured, a deterministic rules-based fallback generates the explanation from score thresholds.</td>
+              <td>Live</td>
+              <td>Per-request (no cache)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>A Note on Census ACS vs. Zillow/Redfin Home Values</h3>
+        <p>
+          You may notice that Census ACS median home values are lower than current Zillow estimates for
+          the same ZIP. This is expected and intentional. The ACS 2023 data reflects homeowner
+          self-reported values from the survey period (2019–2023 rolling average), which lags the
+          actual market by 12–24 months. However, ACS is the only source with complete ZIP-level
+          coverage across all 150 ZIPs — Zillow and Redfin have gaps in lower-volume markets.
+          For ranking and scoring purposes, the relative ordering of ZIPs is accurate even if the
+          absolute dollar values are slightly below current market. The scoring engine normalizes all
+          values relative to each other, so the tier assignments and ranks are reliable.
         </p>
       </section>
 
       {/* ── COLUMN LEGEND ── */}
       <section className="faqSection">
-        <h2>Column Legend — Every Column Explained</h2>
-        <p>Every column in the Markets table is explained below in plain builder language.</p>
+        <h2>📊 Column Legend — Every Column Explained</h2>
 
         <div className="legendGrid">
-
           <div className="legendCard">
             <div className="legendLabel"># Rank</div>
             <div className="legendDesc">
-              The overall position of this ZIP code among all 150 Tampa Bay ZIPs, sorted by{' '}
-              <strong>Budget Score</strong> (highest = best ad target). Rank 1 is the most
-              attractive market for high-budget renovation work.
+              Overall position among all 150 Tampa Bay ZIPs, sorted by <strong>Budget Score</strong>
+              (highest = best ad target). Rank 1 is the most attractive market for high-budget renovation work.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">ZIP</div>
             <div className="legendDesc">
-              The 5-digit US Postal Service ZIP code. You can paste these directly into Google Ads,
-              Meta Ads, or direct-mail platforms to geo-target your campaigns.
+              5-digit USPS ZIP code. Paste directly into Google Ads, Meta Ads, or direct-mail platforms
+              to geo-target campaigns. Use the Export or ZIP List buttons to copy the full list.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Market</div>
             <div className="legendDesc">
-              The city or neighborhood name for the ZIP, plus the county beneath it. A single city
-              (e.g., Tampa) can span many ZIPs with very different demographics — always look at
-              the ZIP level, not just the city name.
+              City or neighborhood name for the ZIP, plus county. A single city (e.g., Tampa) spans
+              many ZIPs with very different demographics — always target at the ZIP level, not city level.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Ad Tier</div>
             <div className="legendDesc">
-              <strong>Tier 1 — $500K+ Renovations (18 ZIPs):</strong> The highest-income, highest
-              home-value markets. Homeowners here regularly commission full gut-renovations, additions,
-              and luxury custom builds. These are your primary ad targets.<br /><br />
-              <strong>Tier 2 — $250K–$500K Renovations (79 ZIPs):</strong> Strong secondary markets.
-              Homeowners can afford major kitchen/bath remodels, additions, and mid-range custom homes.
-              Good for volume campaigns.<br /><br />
-              <strong>Tier 3 — Monitor (53 ZIPs):</strong> Lower income and home values. Occasional
-              $250K+ jobs exist but are not the norm. Watch these for growth signals before investing
-              heavily in ads.
+              <strong>T1 — $500K+ Renovations:</strong> 18 ZIPs. Primary targets — highest income and home value.<br/><br/>
+              <strong>T2 — $250K–$500K Renovations:</strong> 79 ZIPs. Strong secondary targets for volume campaigns.<br/><br/>
+              <strong>T3 — Monitor:</strong> 53 ZIPs. Watch list — minimal ad spend until growth signals appear.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Budget Score</div>
             <div className="legendDesc">
-              <strong>The primary ranking score (0–100).</strong> Answers the question:{' '}
-              <em>"Can homeowners in this ZIP afford a $250K–$500K+ renovation?"</em><br /><br />
-              Calculated from: median household income (40%), median home value (40%), and
-              owner-occupancy rate (20%). A score of 60+ means the market strongly supports
-              $500K+ projects. A score of 25–45 supports $250K–$500K projects.
+              <strong>Primary ranking score (0–100).</strong> Answers: "Can homeowners here afford a $250K–$500K+ renovation?"
+              Weighted 40% income + 40% home value + 20% owner occupancy. Score 60+ = strong $500K+ market.
+              Score 25–45 = solid $250K–$500K market.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Median Income</div>
             <div className="legendDesc">
-              The median annual household income for all households in this ZIP code, sourced from
-              the US Census Bureau ACS 5-Year Estimates (2023). This is the single strongest
-              predictor of renovation budget — households earning $120K+ routinely spend $300K–$600K
-              on major renovations. Households under $70K rarely commission work above $100K.
+              Median annual household income. Source: ACS B19013. Households earning $120K+ routinely
+              spend $300K–$600K on major renovations. Under $70K rarely commission work above $100K.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Median Home Value</div>
             <div className="legendDesc">
-              The median estimated market value of owner-occupied homes in the ZIP. This matters
-              because homeowners rarely spend more on a renovation than the home is worth — a
-              $1.2M home can easily support a $500K renovation, while a $280K home typically cannot.
-              Homes valued over $600K are the sweet spot for high-budget work.
+              Median estimated market value of owner-occupied homes. Source: ACS B25077. Homeowners
+              rarely spend more on renovation than the home is worth — a $1.2M home easily supports
+              a $500K renovation; a $280K home typically cannot.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Owner %</div>
             <div className="legendDesc">
-              The percentage of housing units that are <strong>owner-occupied</strong> (vs. rented).
-              Renters almost never commission renovations — the landlord does, and usually at a lower
-              budget. A high owner-occupancy rate (70%+) means more potential renovation clients per
-              household in the ZIP. Always prioritize high owner-occupancy ZIPs for renovation campaigns.
+              Percentage of housing units that are owner-occupied. Source: ACS B25003. Renters never
+              commission renovations — only owners do. A ZIP with 80% owner-occupancy means 80% of
+              households are potential renovation clients.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Year Built</div>
             <div className="legendDesc">
-              The <strong>median year the homes in this ZIP were built.</strong> This is one of the
-              most important signals for renovation demand:<br /><br />
-              <strong>Built before 1980</strong> — Kitchens, baths, electrical, plumbing, and HVAC
-              are all overdue for replacement. High teardown and gut-renovation potential.<br />
-              <strong>Built 1980–2000</strong> — First major renovation cycle. Kitchens and baths
-              are dated. Strong remodel demand.<br />
-              <strong>Built 2000–2015</strong> — Starting to show age. Good for additions and
-              upgrades.<br />
-              <strong>Built after 2015</strong> — Newer homes. Lower immediate renovation demand
-              but good for luxury additions and pool/outdoor living projects.
+              Median year homes in this ZIP were built. Source: ACS B25035.<br/><br/>
+              <strong>Pre-1980:</strong> Kitchen, bath, electrical, plumbing, HVAC all overdue. High gut-reno potential.<br/>
+              <strong>1980–2000:</strong> First major reno cycle. Kitchens and baths dated.<br/>
+              <strong>2000–2015:</strong> Additions and upgrades in demand.<br/>
+              <strong>Post-2015:</strong> Newer — lower immediate demand but good for luxury additions.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Luxury %</div>
             <div className="legendDesc">
-              The estimated percentage of homes in the ZIP valued above $750K. A high luxury share
-              (30%+) means there is a critical mass of high-net-worth homeowners who expect and
-              budget for premium finishes, architect-designed renovations, and custom builds. This
-              is your best signal for targeting $500K+ project clients.
+              Estimated % of homes valued above $750K. Source: ACS B25075 distribution buckets.
+              When 30%+ of homes in a ZIP are luxury tier, there is a self-reinforcing culture of
+              high-end renovation — neighbors see each other's projects and budgets follow.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Reno Score</div>
             <div className="legendDesc">
-              <strong>Renovation Score (0–100).</strong> Specifically measures how ripe this ZIP is
-              for <em>renovation and remodel</em> work (vs. new construction). Weighted toward older
-              homes, high owner-occupancy, and high home values. A score of 50+ means a large share
-              of homes are both old enough to need work and valuable enough to justify it.
+              Renovation Score (0–100). Measures how ripe this ZIP is for remodel work specifically.
+              Weighted toward older homes, high owner-occupancy, and high home values. Score 50+ means
+              a large share of homes are old enough to need work and valuable enough to justify it.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Opportunity</div>
             <div className="legendDesc">
-              <strong>Overall Opportunity Score (0–100).</strong> A composite of all scoring
-              dimensions — renovation demand, income, home value, population growth, and waterfront
-              premium. Use this as a quick tiebreaker when two ZIPs have similar Budget Scores.
-              Higher is always better.
+              Overall Opportunity Score (0–100). Composite of all dimensions — renovation demand,
+              income, home value, population growth, and waterfront premium. Use as tiebreaker when
+              two ZIPs have similar Budget Scores.
             </div>
           </div>
-
           <div className="legendCard">
             <div className="legendLabel">Flags</div>
             <div className="legendDesc">
-              Special market characteristics that affect strategy:<br /><br />
-              <strong>🌊 Waterfront</strong> — The ZIP contains significant waterfront property
-              (bay, gulf, or lake frontage). Waterfront homes command 20–50% premiums and owners
-              routinely invest in dock additions, outdoor living, and full gut-renovations. These
-              are premium targets for luxury renovation work.<br /><br />
-              <strong>📈 Growing</strong> — Population is growing faster than the regional average
-              (1.5%+ annually). Growth markets attract move-up buyers who renovate before or after
-              purchase, and new residents who customize their homes.
+              <strong>🌊 Waterfront:</strong> ZIP has significant bay, gulf, or lake frontage. Owners
+              invest heavily in dock additions, outdoor living, and full gut-renovations. Premium target
+              for luxury work.<br/><br/>
+              <strong>📈 Growing:</strong> Population growing 1.5%+ annually. Growth markets attract
+              move-up buyers who renovate before or after purchase.
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* ── HOW SCORES ARE CALCULATED ── */}
+      {/* ── AD TIER GUIDE ── */}
       <section className="faqSection">
-        <h2>How are scores calculated?</h2>
+        <h2>🎯 Ad Targeting Guide</h2>
         <table className="faqTable">
           <thead>
-            <tr><th>Score</th><th>Formula</th><th>What it measures</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Budget Score</strong></td>
-              <td>Income (40%) + Home Value (40%) + Owner % (20%)</td>
-              <td>Can this ZIP afford a $250K–$500K+ renovation?</td>
-            </tr>
-            <tr>
-              <td><strong>Reno Score</strong></td>
-              <td>Home Age (35%) + Home Value (30%) + Owner % (20%) + Luxury % (15%)</td>
-              <td>Are homes old enough and valuable enough to justify renovation?</td>
-            </tr>
-            <tr>
-              <td><strong>Opportunity Score</strong></td>
-              <td>Reno (35%) + Income (25%) + Home Value (20%) + Growth (10%) + Waterfront (10%)</td>
-              <td>Overall composite attractiveness for a builder</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="muted small">All scores are normalized 0–100 relative to the Tampa Bay region. A score of 100 would be the theoretical maximum for this market.</p>
-      </section>
-
-      {/* ── AD TIER THRESHOLDS ── */}
-      <section className="faqSection">
-        <h2>Ad Tier Thresholds</h2>
-        <table className="faqTable">
-          <thead>
-            <tr><th>Tier</th><th>Label</th><th>Median Income</th><th>Median Home Value</th><th>Recommended Ad Budget Allocation</th></tr>
+            <tr><th>Tier</th><th>Label</th><th>Income</th><th>Home Value</th><th>Recommended Budget Allocation</th></tr>
           </thead>
           <tbody>
             <tr className="tier1row">
-              <td><strong>Tier 1</strong></td>
-              <td>$500K+ Renovations</td>
-              <td>≥ $110,000</td>
-              <td>≥ $550,000</td>
-              <td>Primary — spend 60–70% of budget here</td>
+              <td><strong>Tier 1</strong></td><td>$500K+ Renovations</td><td>≥ $110K</td><td>≥ $550K</td>
+              <td>Primary — 60–70% of ad budget</td>
             </tr>
             <tr className="tier2row">
-              <td><strong>Tier 2</strong></td>
-              <td>$250K–$500K Renovations</td>
-              <td>$70,000–$110,000</td>
-              <td>$300,000–$550,000</td>
-              <td>Secondary — spend 25–35% of budget here</td>
+              <td><strong>Tier 2</strong></td><td>$250K–$500K Renovations</td><td>$65K–$110K</td><td>$280K–$550K</td>
+              <td>Secondary — 25–35% of ad budget</td>
             </tr>
             <tr className="tier3row">
-              <td><strong>Tier 3</strong></td>
-              <td>Monitor</td>
-              <td>&lt; $70,000</td>
-              <td>&lt; $300,000</td>
+              <td><strong>Tier 3</strong></td><td>Monitor</td><td>&lt; $65K</td><td>&lt; $280K</td>
               <td>Watch list — minimal spend, test only</td>
             </tr>
           </tbody>
         </table>
-      </section>
-
-      {/* ── WHERE DOES THE DATA COME FROM ── */}
-      <section className="faqSection">
-        <h2>Where does the data come from?</h2>
-        <table className="faqTable">
-          <thead>
-            <tr><th>Data Point</th><th>Source</th><th>Vintage</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Median Household Income</td><td>US Census Bureau — ACS 5-Year Estimates</td><td>2023</td></tr>
-            <tr><td>Median Home Value</td><td>US Census Bureau — ACS 5-Year Estimates</td><td>2023</td></tr>
-            <tr><td>Owner Occupancy Rate</td><td>US Census Bureau — ACS 5-Year Estimates</td><td>2023</td></tr>
-            <tr><td>Median Year Built</td><td>US Census Bureau — ACS 5-Year Estimates</td><td>2023</td></tr>
-            <tr><td>Population &amp; Growth</td><td>US Census Bureau — ACS 5-Year Estimates</td><td>2023</td></tr>
-            <tr><td>Luxury Share (%)</td><td>Derived from ACS home value distribution</td><td>2023</td></tr>
-            <tr><td>Waterfront Flag</td><td>Geographic analysis — Tampa Bay, Gulf Coast, lakes</td><td>Static</td></tr>
-            <tr><td>Permit Activity</td><td>Hillsborough County &amp; City of Tampa open data portals</td><td>Live / nightly refresh</td></tr>
-            <tr><td>Property Detail</td><td>ATTOM Data + RentCast (when API keys configured)</td><td>Live / 7-day cache</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      {/* ── HOW TO USE FOR ADS ── */}
-      <section className="faqSection">
-        <h2>How to use this for ad targeting</h2>
 
         <h3>Google Ads / Local Services Ads</h3>
         <ol>
-          <li>Go to the <strong>Markets</strong> tab and filter to <strong>Tier 1</strong> ZIPs.</li>
-          <li>Click <strong>Export CSV</strong> or use the ZIP List API endpoint to copy the ZIP codes.</li>
-          <li>In Google Ads, go to <em>Campaign → Locations → Enter location</em> and paste the ZIP codes.</li>
+          <li>Filter to <strong>Tier 1</strong> ZIPs in the Markets tab.</li>
+          <li>Click <strong>Export CSV</strong> or use the ZIP List endpoint to copy the ZIP codes.</li>
+          <li>In Google Ads → <em>Campaign → Locations → Enter location</em> → paste ZIP codes.</li>
           <li>Set bid adjustments: +20% for Tier 1, +10% for Tier 2, 0% for Tier 3.</li>
         </ol>
 
         <h3>Meta (Facebook / Instagram) Ads</h3>
         <ol>
-          <li>In Ads Manager, go to <em>Ad Set → Audience → Locations</em>.</li>
-          <li>Switch from "City" to <strong>"ZIP Code"</strong> targeting.</li>
-          <li>Paste your Tier 1 ZIP codes. Meta will show you the estimated reach per ZIP.</li>
+          <li>In Ads Manager → <em>Ad Set → Audience → Locations</em> → switch to <strong>ZIP Code</strong> targeting.</li>
+          <li>Paste your Tier 1 ZIP codes. Meta will show estimated reach per ZIP.</li>
           <li>Layer on income targeting: <em>Household income — top 10–25%</em> to further qualify.</li>
         </ol>
 
         <h3>Direct Mail</h3>
         <ol>
           <li>Export the full CSV and sort by <strong>Year Built</strong> (oldest first) within Tier 1 ZIPs.</li>
-          <li>ZIPs with median year built before 1985 and home values above $500K are your best direct-mail targets — homes old enough to need work, owners wealthy enough to pay for it.</li>
+          <li>ZIPs with median year built before 1985 and home values above $500K are your best targets — old enough to need work, owners wealthy enough to pay for it.</li>
           <li>Use the <strong>Property Lookup</strong> tab to research specific addresses before mailing.</li>
         </ol>
       </section>
 
       {/* ── FAQ ── */}
       <section className="faqSection">
-        <h2>Frequently Asked Questions</h2>
+        <h2>❓ Frequently Asked Questions</h2>
 
         <div className="faqItem">
           <h4>Why is South Tampa (33629) ranked #3 but not #1?</h4>
@@ -298,8 +428,16 @@ export function FaqView() {
           <p>A home built in 1965 with a $900K market value is a near-certain renovation candidate.
           The kitchen, bathrooms, electrical panel, plumbing, and HVAC are all 50+ years old. The
           owner has the equity and the motivation. A home built in 2020 at the same value has no
-          renovation need yet. Year Built is the strongest signal for <em>timing</em> — it tells you
-          who needs work now vs. in 10 years.</p>
+          renovation need yet. Year Built is the strongest signal for <em>timing</em>.</p>
+        </div>
+
+        <div className="faqItem">
+          <h4>Why do Census ACS home values look lower than Zillow?</h4>
+          <p>ACS values are homeowner self-reported estimates from a rolling 5-year survey (2019–2023),
+          which lags the actual market by 12–24 months. However, ACS is the only source with complete
+          ZIP-level coverage across all 150 ZIPs. The relative ranking of ZIPs is accurate — the
+          tier assignments and scores are reliable even if absolute dollar values are slightly below
+          current market.</p>
         </div>
 
         <div className="faqItem">
@@ -307,45 +445,32 @@ export function FaqView() {
           <p>Renters don't hire renovation contractors — their landlords do, and usually at much lower
           budgets. A ZIP with 80% owner-occupancy means 80% of households are potential renovation
           clients. A ZIP with 40% owner-occupancy (common in downtown areas) means half your ad
-          impressions are wasted on renters. Always prioritize high owner-occupancy ZIPs for
-          renovation campaigns.</p>
-        </div>
-
-        <div className="faqItem">
-          <h4>What is the Luxury % and why does it matter?</h4>
-          <p>Luxury Share is the estimated percentage of homes in the ZIP valued above $750K. When
-          30%+ of homes in a ZIP are in the luxury tier, there is a self-reinforcing culture of
-          high-end renovation — neighbors see each other's projects, expectations rise, and budgets
-          follow. Luxury-dense ZIPs like Tierra Verde (33715) and Hyde Park (33606) routinely produce
-          $500K–$1M+ renovation projects.</p>
+          impressions are wasted on renters.</p>
         </div>
 
         <div className="faqItem">
           <h4>How often is the data updated?</h4>
-          <p>The demographic data (income, home values, year built) comes from the 2023 ACS 5-Year
-          Census estimates — this is the most current ZIP-level data available and is updated
-          annually when the Census releases new estimates (typically December). Permit data refreshes
-          nightly from Hillsborough County and City of Tampa open data portals. Property-level data
-          (via ATTOM/RentCast) is cached for 7 days per property.</p>
+          <p>Demographic data (income, home values, year built) comes from the 2023 ACS 5-Year
+          estimates — updated annually each December. Permit data refreshes nightly from Hillsborough
+          County and City of Tampa open data portals. Property-level data (ATTOM/RentCast) is cached
+          7 days per address.</p>
+        </div>
+
+        <div className="faqItem">
+          <h4>What do the ✨ Explain and 📄 PDF buttons do?</h4>
+          <p><strong>✨ Explain</strong> sends the ZIP's data to GPT-4o-mini which writes a plain-English
+          summary of why the ZIP scored the way it did and what type of builder should target it.
+          If no OpenAI key is configured, a rules-based fallback generates the summary automatically.<br/><br/>
+          <strong>📄 PDF</strong> generates a printable 1-page market report — useful for client
+          presentations or sales meetings.</p>
         </div>
 
         <div className="faqItem">
           <h4>Can I adjust the scoring weights?</h4>
           <p>Yes — the scoring engine is in <code>server/scoring.js</code> in the GitHub repository.
-          Each weight is clearly labeled and can be adjusted. If you have permit data, sales data,
-          or your own lead history, it can be integrated via the data pipeline.</p>
+          Each weight is clearly labeled and can be adjusted. If you have permit data, sales history,
+          or your own lead data, it can be integrated via the data pipeline.</p>
         </div>
-
-        <div className="faqItem">
-          <h4>What do the ✨ Explain and 📄 PDF buttons do?</h4>
-          <p><strong>✨ Explain</strong> sends the ZIP's data to an AI assistant that writes a
-          plain-English summary of why the ZIP scored the way it did and what type of builder should
-          target it. If no OpenAI key is configured, a rules-based fallback generates the summary
-          automatically.<br /><br />
-          <strong>📄 PDF</strong> generates a printable 1-page market report for the ZIP — useful
-          for client presentations, sales meetings, or keeping on file.</p>
-        </div>
-
       </section>
 
     </div>

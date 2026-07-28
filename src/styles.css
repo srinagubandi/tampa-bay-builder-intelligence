@@ -84,3 +84,16 @@ td.actions{white-space:nowrap;display:flex;gap:6px;justify-content:flex-end}
 .faqItem h4{margin:0 0 6px;font-size:14px;color:#172033}
 .faqItem p{margin:0;font-size:13px;line-height:1.65;color:#374151}
 .faqItem code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px}
+
+/* ---- FAQ hero stats + methodology blocks ---- */
+.faqHero{background:linear-gradient(135deg,#172033 0%,#1d4ed8 100%) !important;color:#fff}
+.faqHero h2{color:#fff !important;border-bottom-color:rgba(255,255,255,.2) !important}
+.faqHero p{color:rgba(255,255,255,.88)}
+.heroStats{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px}
+.heroStat{background:rgba(255,255,255,.12);border-radius:12px;padding:16px 24px;text-align:center;min-width:100px}
+.heroStat strong{display:block;font-size:32px;font-weight:900;color:#fff}
+.heroStat span{display:block;font-size:12px;color:rgba(255,255,255,.75);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.methodBlock{background:#f0f7ff;border-left:4px solid #1d4ed8;border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0}
+.methodTitle{font-weight:800;font-size:14px;color:#172033;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.methodFormula{font-family:monospace;font-size:13px;background:#172033;color:#7dd3fc;padding:10px 14px;border-radius:8px;margin-bottom:10px;line-height:1.5;word-break:break-word}
+.methodNote{font-size:12px;line-height:1.65;color:#374151;margin:0}
