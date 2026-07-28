@@ -1,6 +1,6 @@
 {
   "name": "tampa-bay-builder-intelligence",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "Local-first Tampa Bay builder market intelligence platform.",
@@ -11,7 +11,9 @@
     "check": "node scripts/check.js",
     "refresh:data": "node scripts/refresh-data.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
     "compression": "^1.7.5",
