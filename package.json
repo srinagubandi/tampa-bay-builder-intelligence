@@ -9,7 +9,11 @@
     "build": "vite build",
     "start": "node server/index.js",
     "check": "node scripts/check.js",
-    "refresh:data": "node scripts/refresh-data.js"
+    "refresh:data": "node scripts/refresh-data.js",
+    "refresh:markets": "node scripts/refresh-markets.js",
+    "refresh:properties": "node scripts/refresh-properties.js",
+    "refresh:permits": "node scripts/refresh-permits.js",
+    "cron": "node scripts/cron.js"
   },
   "engines": {
     "node": ">=20"
@@ -23,7 +27,11 @@
     "leaflet": "^1.9.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "exceljs": "^4.4.0",
+    "node-cron": "^3.0.3",
+    "openai": "^4.77.0",
+    "pdfkit": "^0.15.2"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.16",

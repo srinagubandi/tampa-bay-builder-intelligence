@@ -25,7 +25,49 @@ export function configuredProviders() {
     census: true,
     fema: true,
     rentcast: Boolean(process.env.RENTCAST_API_KEY),
-    attom: Boolean(process.env.ATTOM_API_KEY)
+    attom: Boolean(process.env.ATTOM_API_KEY),
+    mock: mockEnabled()
+  };
+}
+
+// When no paid API keys are configured we fall back to deterministic mock data so the
+// pipeline can be exercised end-to-end. Disable by setting MOCK_PROVIDERS=0.
+export function mockEnabled() {
+  if (process.env.MOCK_PROVIDERS === '0' || process.env.MOCK_PROVIDERS === 'false') return false;
+  if (process.env.MOCK_PROVIDERS === '1' || process.env.MOCK_PROVIDERS === 'true') return true;
+  // Default: enable mocks only when neither real provider key is present.
+  return !process.env.ATTOM_API_KEY && !process.env.RENTCAST_API_KEY;
+}
+
+// Simple deterministic hash so mock values are stable for a given address.
+function hashString(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) { hash = (hash * 31 + text.charCodeAt(i)) >>> 0; }
+  return hash;
+}
+
+export function mockAttomProperty({ street, city, state = 'FL', zip }) {
+  const seed = hashString(`attom:${street}:${zip}`);
+  const yearBuilt = 1955 + (seed % 65);
+  const sqft = 1400 + (seed % 3200);
+  const lot = 5000 + (seed % 22000);
+  return {
+    source: 'attom-mock', providerId: `mock-${seed}`, parcelId: `U-${(seed % 999999).toString().padStart(6, '0')}`,
+    address: [street, city, state, zip].filter(Boolean).join(', '), county: null,
+    latitude: null, longitude: null, propertyType: (seed % 5 === 0) ? 'Condominium' : 'Single Family Residence',
+    bedrooms: 2 + (seed % 4), bathrooms: 1 + (seed % 4), squareFeet: sqft, lotSquareFeet: lot,
+    yearBuilt, lastSaleDate: null, lastSalePrice: 200000 + (seed % 600000),
+    assessedValue: 220000 + (seed % 900000), ownerOccupied: seed % 2 === 0, raw: { mock: true }
+  };
+}
+
+export function mockRentCastProperty(address) {
+  const seed = hashString(`rentcast:${address}`);
+  return {
+    source: 'rentcast-mock', providerId: `mock-${seed}`, address, parcelId: null, county: null,
+    latitude: null, longitude: null, propertyType: null, bedrooms: null, bathrooms: null,
+    squareFeet: null, lotSquareFeet: null, yearBuilt: null, lastSaleDate: null, lastSalePrice: null,
+    assessedValue: null, estimatedValue: 260000 + (seed % 1200000), ownerOccupied: null, raw: { mock: true }
   };
 }
 

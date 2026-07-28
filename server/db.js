@@ -36,11 +36,42 @@ CREATE TABLE IF NOT EXISTS api_cache (
   cache_key TEXT PRIMARY KEY, provider TEXT NOT NULL, response_json TEXT NOT NULL,
   fetched_at TEXT NOT NULL, expires_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS permits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, source_permit_id TEXT UNIQUE,
+  parcel_id TEXT, address TEXT, zip TEXT, permit_type TEXT, category TEXT,
+  description TEXT, valuation INTEGER, issued_date TEXT, status TEXT,
+  latitude REAL, longitude REAL, raw_json TEXT, fetched_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_permits_zip ON permits(zip);
+CREATE INDEX IF NOT EXISTS idx_permits_issued ON permits(issued_date);
+CREATE TABLE IF NOT EXISTS prospects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, property_id INTEGER, address TEXT NOT NULL,
+  zip TEXT, stage TEXT NOT NULL DEFAULT 'New Lead', priority TEXT DEFAULT 'Medium',
+  estimated_value INTEGER, opportunity_score INTEGER, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+  FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_prospects_stage ON prospects(stage);
+CREATE TABLE IF NOT EXISTS contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, prospect_id INTEGER NOT NULL, name TEXT, role TEXT,
+  email TEXT, phone TEXT, created_at TEXT NOT NULL,
+  FOREIGN KEY(prospect_id) REFERENCES prospects(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_contacts_prospect ON contacts(prospect_id);
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, prospect_id INTEGER NOT NULL, body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(prospect_id) REFERENCES prospects(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_notes_prospect ON notes(prospect_id);
 `);
 
-// Add new columns if upgrading from old schema
+// Safe schema migrations for upgrades from older versions
 try { db.exec(`ALTER TABLE markets ADD COLUMN waterfront_zip INTEGER DEFAULT 0`); } catch(_) {}
 try { db.exec(`ALTER TABLE markets ADD COLUMN population_growth REAL DEFAULT 0`); } catch(_) {}
+
+/* ------------------------------------------------------------------ *
+ * Markets
+ * ------------------------------------------------------------------ */
 
 const upsert = db.prepare(`
   INSERT INTO markets(zip,county,city,latitude,longitude,population,income,home_value,
@@ -76,6 +107,10 @@ export function getMarket(zip) {
 export function countMarkets() {
   return db.prepare('SELECT COUNT(*) AS n FROM markets').get().n;
 }
+
+/* ------------------------------------------------------------------ *
+ * Properties
+ * ------------------------------------------------------------------ */
 
 const propertySelect = `SELECT id,lookup_key AS lookupKey,provider_id AS providerId,parcel_id AS parcelId,
   address,city,state,zip,county,latitude,longitude,property_type AS propertyType,bedrooms,bathrooms,
@@ -144,18 +179,165 @@ export function saveProperty(property, ttlHours = 168) {
   return getFreshProperty(property.lookupKey);
 }
 
+/* ------------------------------------------------------------------ *
+ * API Cache Layer
+ * ------------------------------------------------------------------ */
+
+const cacheSelect = db.prepare(`SELECT response_json AS responseJson FROM api_cache WHERE cache_key=? AND expires_at>datetime('now')`);
+const cacheUpsert = db.prepare(`INSERT INTO api_cache(cache_key,provider,response_json,fetched_at,expires_at)
+  VALUES(@cacheKey,@provider,@responseJson,@fetchedAt,@expiresAt)
+  ON CONFLICT(cache_key) DO UPDATE SET provider=excluded.provider,response_json=excluded.response_json,
+    fetched_at=excluded.fetched_at,expires_at=excluded.expires_at`);
+
 export function getCachedApiResponse(key) {
-  return db.prepare(`SELECT response_json FROM api_cache WHERE cache_key=? AND expires_at>datetime('now')`).get(key);
+  if (!key) return null;
+  const row = cacheSelect.get(String(key));
+  if (!row) return null;
+  try { return JSON.parse(row.responseJson); } catch { return null; }
 }
 
-export function setCachedApiResponse(key, provider, responseJson, ttlHours = 24) {
+export function setCachedApiResponse(key, provider, response, ttlHours = 168) {
+  if (!key) return;
   const now = new Date();
-  const expires = new Date(now.getTime() + ttlHours * 3600000);
-  db.prepare(`INSERT INTO api_cache(cache_key,provider,response_json,fetched_at,expires_at)
-    VALUES(?,?,?,?,?)
-    ON CONFLICT(cache_key) DO UPDATE SET provider=excluded.provider,response_json=excluded.response_json,
-    fetched_at=excluded.fetched_at,expires_at=excluded.expires_at`
-  ).run(key, provider, responseJson, now.toISOString(), expires.toISOString());
+  const expires = new Date(now.getTime() + Number(ttlHours) * 3600000);
+  cacheUpsert.run({
+    cacheKey: String(key), provider: String(provider || 'unknown'),
+    responseJson: JSON.stringify(response ?? null),
+    fetchedAt: now.toISOString(), expiresAt: expires.toISOString()
+  });
+}
+
+export function purgeExpiredCache() {
+  return db.prepare(`DELETE FROM api_cache WHERE expires_at<=datetime('now')`).run().changes;
+}
+
+/* ------------------------------------------------------------------ *
+ * Refresh log
+ * ------------------------------------------------------------------ */
+
+const insertRefreshLog = db.prepare(`INSERT INTO refresh_log(source,status,message,created_at) VALUES(?,?,?,?)`);
+export function logRefresh(source, status, message = '') {
+  insertRefreshLog.run(source, status, String(message).slice(0, 2000), new Date().toISOString());
+}
+export function listRefreshLog(limit = 50) {
+  return db.prepare(`SELECT id,source,status,message,created_at AS createdAt FROM refresh_log ORDER BY id DESC LIMIT ?`).all(Math.min(200, limit));
+}
+
+export function getExpiredPropertyKeys(limit = 100) {
+  return db.prepare(`SELECT lookup_key AS lookupKey, address, zip FROM properties WHERE expires_at<=datetime('now') ORDER BY expires_at ASC LIMIT ?`).all(Math.min(500, limit));
+}
+
+/* ------------------------------------------------------------------ *
+ * Permits
+ * ------------------------------------------------------------------ */
+
+const permitUpsert = db.prepare(`INSERT INTO permits(source,source_permit_id,parcel_id,address,zip,permit_type,category,description,valuation,issued_date,status,latitude,longitude,raw_json,fetched_at)
+  VALUES(@source,@sourcePermitId,@parcelId,@address,@zip,@permitType,@category,@description,@valuation,@issuedDate,@status,@latitude,@longitude,@rawJson,@fetchedAt)
+  ON CONFLICT(source_permit_id) DO UPDATE SET parcel_id=excluded.parcel_id,address=excluded.address,zip=excluded.zip,permit_type=excluded.permit_type,category=excluded.category,description=excluded.description,valuation=excluded.valuation,issued_date=excluded.issued_date,status=excluded.status,latitude=excluded.latitude,longitude=excluded.longitude,raw_json=excluded.raw_json,fetched_at=excluded.fetched_at`);
+
+export const savePermits = db.transaction(rows => {
+  let count = 0;
+  for (const row of rows) {
+    permitUpsert.run({
+      source: row.source || 'unknown',
+      sourcePermitId: row.sourcePermitId || `${row.source}:${row.address}:${row.issuedDate}`,
+      parcelId: row.parcelId || null, address: row.address || null, zip: row.zip || null,
+      permitType: row.permitType || null, category: row.category || null, description: row.description || null,
+      valuation: row.valuation == null ? null : Math.round(Number(row.valuation)) || 0,
+      issuedDate: row.issuedDate || null, status: row.status || null,
+      latitude: row.latitude ?? null, longitude: row.longitude ?? null,
+      rawJson: JSON.stringify(row.raw || {}), fetchedAt: new Date().toISOString()
+    });
+    count += 1;
+  }
+  return count;
+});
+
+export function getPermitsByZip(zip, { since, limit = 100 } = {}) {
+  const clauses = ['zip=?'];
+  const params = [zip];
+  if (since) { clauses.push('issued_date>=?'); params.push(since); }
+  params.push(Math.min(500, limit));
+  return db.prepare(`SELECT id,source,parcel_id AS parcelId,address,zip,permit_type AS permitType,category,description,valuation,issued_date AS issuedDate,status,latitude,longitude FROM permits WHERE ${clauses.join(' AND ')} ORDER BY issued_date DESC LIMIT ?`).all(...params);
+}
+
+export function permitStatsByZip(zip, { since } = {}) {
+  const clauses = ['zip=?'];
+  const params = [zip];
+  if (since) { clauses.push('issued_date>=?'); params.push(since); }
+  const where = clauses.join(' AND ');
+  const totals = db.prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(valuation),0) AS totalValuation FROM permits WHERE ${where}`).get(...params);
+  const byCategory = db.prepare(`SELECT category, COUNT(*) AS count, COALESCE(SUM(valuation),0) AS totalValuation FROM permits WHERE ${where} GROUP BY category ORDER BY count DESC`).all(...params);
+  return { ...totals, byCategory };
+}
+
+/* ------------------------------------------------------------------ *
+ * CRM: prospects / contacts / notes
+ * ------------------------------------------------------------------ */
+
+export const PROSPECT_STAGES = ['New Lead', 'Researching', 'Qualified', 'Contacted', 'Proposal', 'Won', 'Lost'];
+
+const insertProspect = db.prepare(`INSERT INTO prospects(property_id,address,zip,stage,priority,estimated_value,opportunity_score,created_at,updated_at)
+  VALUES(@propertyId,@address,@zip,@stage,@priority,@estimatedValue,@opportunityScore,@createdAt,@updatedAt)`);
+
+export function createProspect(input) {
+  const now = new Date().toISOString();
+  const stage = PROSPECT_STAGES.includes(input.stage) ? input.stage : 'New Lead';
+  const info = insertProspect.run({
+    propertyId: input.propertyId ?? null, address: input.address, zip: input.zip ?? null,
+    stage, priority: input.priority || 'Medium',
+    estimatedValue: input.estimatedValue == null ? null : Math.round(Number(input.estimatedValue)) || 0,
+    opportunityScore: input.opportunityScore == null ? null : Math.round(Number(input.opportunityScore)) || 0,
+    createdAt: now, updatedAt: now
+  });
+  return getProspect(info.lastInsertRowid);
+}
+
+export function updateProspect(id, patch = {}) {
+  const existing = db.prepare('SELECT * FROM prospects WHERE id=?').get(id);
+  if (!existing) return null;
+  const stage = patch.stage && PROSPECT_STAGES.includes(patch.stage) ? patch.stage : existing.stage;
+  db.prepare('UPDATE prospects SET stage=?,priority=?,estimated_value=?,opportunity_score=?,updated_at=? WHERE id=?').run(
+    stage,
+    patch.priority ?? existing.priority,
+    patch.estimatedValue == null ? existing.estimated_value : Math.round(Number(patch.estimatedValue)) || 0,
+    patch.opportunityScore == null ? existing.opportunity_score : Math.round(Number(patch.opportunityScore)) || 0,
+    new Date().toISOString(), id
+  );
+  return getProspect(id);
+}
+
+export function deleteProspect(id) {
+  return db.prepare('DELETE FROM prospects WHERE id=?').run(id).changes > 0;
+}
+
+export function getProspect(id) {
+  const row = db.prepare('SELECT id,property_id AS propertyId,address,zip,stage,priority,estimated_value AS estimatedValue,opportunity_score AS opportunityScore,created_at AS createdAt,updated_at AS updatedAt FROM prospects WHERE id=?').get(id);
+  if (!row) return null;
+  row.contacts = db.prepare('SELECT id,name,role,email,phone,created_at AS createdAt FROM contacts WHERE prospect_id=? ORDER BY id').all(id);
+  row.notes = db.prepare('SELECT id,body,created_at AS createdAt FROM notes WHERE prospect_id=? ORDER BY id DESC').all(id);
+  return row;
+}
+
+export function listProspects() {
+  const rows = db.prepare('SELECT id,property_id AS propertyId,address,zip,stage,priority,estimated_value AS estimatedValue,opportunity_score AS opportunityScore,created_at AS createdAt,updated_at AS updatedAt FROM prospects ORDER BY updated_at DESC').all();
+  const noteCounts = db.prepare('SELECT prospect_id AS pid, COUNT(*) AS c FROM notes GROUP BY prospect_id').all();
+  const map = Object.fromEntries(noteCounts.map(n => [n.pid, n.c]));
+  return rows.map(r => ({ ...r, noteCount: map[r.id] || 0 }));
+}
+
+export function addContact(prospectId, contact) {
+  const info = db.prepare('INSERT INTO contacts(prospect_id,name,role,email,phone,created_at) VALUES(?,?,?,?,?,?)').run(
+    prospectId, contact.name || null, contact.role || null, contact.email || null, contact.phone || null, new Date().toISOString()
+  );
+  return db.prepare('SELECT id,name,role,email,phone,created_at AS createdAt FROM contacts WHERE id=?').get(info.lastInsertRowid);
+}
+
+export function addNote(prospectId, body) {
+  if (!body || !String(body).trim()) return null;
+  const info = db.prepare('INSERT INTO notes(prospect_id,body,created_at) VALUES(?,?,?)').run(prospectId, String(body).trim(), new Date().toISOString());
+  db.prepare('UPDATE prospects SET updated_at=? WHERE id=?').run(new Date().toISOString(), prospectId);
+  return db.prepare('SELECT id,body,created_at AS createdAt FROM notes WHERE id=?').get(info.lastInsertRowid);
 }
 
 export default db;
