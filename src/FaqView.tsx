@@ -162,83 +162,78 @@ export function FaqView() {
       <section className="faqSection">
         <h2>📦 Data Sources — Where Every Number Comes From</h2>
 
-        <table className="faqTable">
-          <thead>
-            <tr><th>Data Point</th><th>Source</th><th>How We Got It</th><th>Vintage</th><th>Refresh</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Median Household Income</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>API call to <code>api.census.gov/data/2023/acs/acs5</code>, table B19013, filtered to Florida ZIP Code Tabulation Areas (ZCTAs). ZCTA boundaries are used as the best available proxy for USPS ZIP codes.</td>
-              <td>2023</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Median Home Value</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>Same API call, table B25077. This is the self-reported estimated market value of owner-occupied housing units, not sale prices. It lags actual market prices by 12–18 months but is the only ZIP-level dataset with complete coverage.</td>
-              <td>2023</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Owner Occupancy Rate</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>Table B25003: owner-occupied units (B25003_002E) divided by total occupied units (B25003_001E), expressed as a percentage.</td>
-              <td>2023</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Median Year Built</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>Table B25035: median year structure built for all housing units in the ZCTA. This includes all housing types (single-family, multi-family, condos). For renovation targeting, single-family homes are the primary target but this metric is still highly predictive at the ZIP level.</td>
-              <td>2023</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Luxury Share %</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>Table B25075 (home value distribution). We sum the counts in the $750K–$999K, $1M–$1.499M, and $1.5M+ buckets, then divide by total owner-occupied units. This gives the share of homes in the luxury tier for each ZIP.</td>
-              <td>2023</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Population &amp; Growth Rate</strong></td>
-              <td>US Census Bureau — ACS 5-Year</td>
-              <td>Table B01003 (total population) for 2019 and 2023 vintages. Growth rate = (pop2023 − pop2019) / pop2019 / 4 years, annualized.</td>
-              <td>2023 vs 2019</td>
-              <td>Annual (December)</td>
-            </tr>
-            <tr>
-              <td><strong>Waterfront Flag</strong></td>
-              <td>Geographic analysis</td>
-              <td>Manual classification based on ZIP code boundaries overlaid with Tampa Bay shoreline, Gulf of Mexico barrier islands, and major inland water bodies (Lake Tarpon, Lake Maggiore, etc.). Verified against known waterfront communities and real estate listings.</td>
-              <td>Static</td>
-              <td>Manual review annually</td>
-            </tr>
-            <tr>
-              <td><strong>Permit Activity</strong></td>
-              <td>Hillsborough County &amp; City of Tampa Open Data Portals</td>
-              <td>Fetched via Socrata API (<code>gis.hillsboroughcounty.org</code>) and Tampa ArcGIS REST API. Filters for permit types: new construction, addition, remodel, renovation. Aggregated by ZIP code and permit value bucket.</td>
-              <td>Live</td>
-              <td>Nightly (cron job)</td>
-            </tr>
-            <tr>
-              <td><strong>Property Detail</strong></td>
-              <td>ATTOM Data Solutions + RentCast</td>
-              <td>On-demand lookup via REST API when a user searches a specific address in the Property Lookup tab. ATTOM provides AVM (automated valuation), ownership history, and lot details. RentCast provides rental comps and estimated rent. Results are cached in SQLite for 7 days to minimize API costs. Mock data is returned when no API keys are configured.</td>
-              <td>Live</td>
-              <td>7-day cache per address</td>
-            </tr>
-            <tr>
-              <td><strong>AI Explanations</strong></td>
-              <td>OpenAI GPT-4o-mini</td>
-              <td>When the ✨ Explain button is clicked, the ZIP's full data object is sent to GPT-4o-mini with a structured prompt that instructs it to explain the score in plain builder language. If no OpenAI API key is configured, a deterministic rules-based fallback generates the explanation from score thresholds.</td>
-              <td>Live</td>
-              <td>Per-request (no cache)</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="sourceCards">
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>💰 Median Household Income</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 · Updated annually</span>
+            </div>
+            <p>Pulled from ACS table <code>B19013</code> via the Census API. This is the midpoint income for all households in the ZIP — half earn more, half earn less. Higher income = more renovation budget available.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>🏠 Median Home Value</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 · Updated annually</span>
+            </div>
+            <p>ACS table <code>B25077</code> — homeowner self-reported estimated market value of owner-occupied units. Lags Zillow by 12–18 months but is the only dataset with complete coverage across all 150 ZIPs. Used for relative ranking, not absolute pricing.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>👤 Owner Occupancy Rate</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 · Updated annually</span>
+            </div>
+            <p>ACS table <code>B25003</code>: owner-occupied units ÷ total occupied units. Only homeowners hire renovation contractors — renters don't. A ZIP with 80% owners is a much better ad target than one with 40% owners.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>🏗️ Median Year Built</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 · Updated annually</span>
+            </div>
+            <p>ACS table <code>B25035</code>: median year all housing structures were built. Older homes (pre-1980) have outdated kitchens, baths, electrical, and HVAC — the highest renovation demand. A ZIP built in 1965 on average is a better target than one built in 2010.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>💎 Luxury Share %</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 · Updated annually</span>
+            </div>
+            <p>ACS table <code>B25075</code> (home value distribution). We add up all homes valued over $750K and divide by total owner-occupied units. A high luxury share signals a neighborhood culture of high-end spending — these homeowners are comfortable with $500K+ projects.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>📈 Population &amp; Growth Rate</strong>
+              <span className="sourceMeta">US Census ACS 5-Year · 2023 vs 2019 · Updated annually</span>
+            </div>
+            <p>ACS table <code>B01003</code> compared across 2019 and 2023 vintages. Growth rate = (2023 pop − 2019 pop) ÷ 2019 pop ÷ 4 years. Fast-growing ZIPs attract move-up buyers who renovate before or after purchase — a strong demand signal.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>🌊 Waterfront Flag</strong>
+              <span className="sourceMeta">Geographic analysis · Static · Reviewed annually</span>
+            </div>
+            <p>Manual classification: ZIP code boundaries were overlaid with Tampa Bay shoreline, Gulf Coast barrier islands, and major inland lakes (Lake Tarpon, Lake Maggiore, etc.). Waterfront ZIPs command premium renovation budgets — homeowners invest heavily in outdoor living, docks, and water views.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>🔨 Permit Activity</strong>
+              <span className="sourceMeta">Hillsborough County &amp; Tampa Open Data · Live · Refreshed nightly</span>
+            </div>
+            <p>Fetched nightly via Socrata API from <code>gis.hillsboroughcounty.org</code> and the Tampa ArcGIS REST API. Filters for permit types: new construction, addition, remodel, renovation. Aggregated by ZIP and permit value. Shows where renovation work is actually happening right now.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>🏡 Property Detail</strong>
+              <span className="sourceMeta">ATTOM Data Solutions + RentCast · On-demand · 7-day cache</span>
+            </div>
+            <p>Looked up in real time when you search an address in the Property Lookup tab. ATTOM provides automated valuation (AVM), ownership history, and lot details. RentCast provides rental comps. Results are cached for 7 days. If no API keys are configured, realistic mock data is shown.</p>
+          </div>
+          <div className="sourceCard">
+            <div className="sourceCardHead">
+              <strong>✨ AI Explanations</strong>
+              <span className="sourceMeta">OpenAI GPT-4o-mini · On-demand · No cache</span>
+            </div>
+            <p>When you click the ✨ Why? button on any ZIP, the full data object is sent to GPT-4o-mini with a prompt that explains the score in plain builder language. If no OpenAI key is set, a rules-based fallback generates the explanation automatically from score thresholds.</p>
+          </div>
+        </div>
 
         <h3>A Note on Census ACS vs. Zillow/Redfin Home Values</h3>
         <p>

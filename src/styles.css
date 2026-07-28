@@ -187,3 +187,12 @@ th.sorted .thSort{color:#2563eb}
 
 /* ── Rank medals ── */
 .rankCell{font-size:16px;text-align:center;min-width:36px}
+
+/* ── Source cards (FAQ data sources section) ── */
+.sourceCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:16px 0}
+.sourceCard{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px}
+.sourceCardHead{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.sourceCardHead strong{font-size:14px;color:#111827}
+.sourceMeta{font-size:11px;color:#6b7280;font-weight:500;letter-spacing:.2px}
+.sourceCard p{font-size:13px;color:#374151;line-height:1.6;margin:0}
+.sourceCard code{font-size:11px;background:#e5e7eb;padding:1px 5px;border-radius:3px;color:#1d4ed8}
