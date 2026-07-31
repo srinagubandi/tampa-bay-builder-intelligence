@@ -171,7 +171,7 @@ function MarketsView({ markets, status, dataYear, onSaveProspect }:
   const t3 = filtered.filter(m => m.adTier === 3).length;
 
   return <>
-    {/* ── Filter bar ── */}
+    {/* ── Filter bar ── HIDDEN — activate when ready
     <section className="filters">
       <label>
         <span className="filterLabel">🔍 Search</span>
@@ -227,6 +227,7 @@ function MarketsView({ markets, status, dataYear, onSaveProspect }:
         <span>🌊 Waterfront ZIPs only</span>
       </label>
     </section>
+    ── END FILTER BAR */}
 
     {/* ── KPI summary cards ── */}
     <section className="kpis">
@@ -709,19 +710,23 @@ function App() {
         <button className={tab === 'markets' ? 'on' : ''} onClick={() => setTab('markets')}>
           📍 ZIP Rankings
         </button>
+        {/* 🏠 Property Lookup — hidden until activated
         <button className={tab === 'property' ? 'on' : ''} onClick={() => setTab('property')}>
           🏠 Property Lookup
         </button>
+        */}
+        {/* 📋 My Pipeline — hidden until activated
         <button className={tab === 'prospects' ? 'on' : ''} onClick={() => setTab('prospects')}>
           📋 My Pipeline
         </button>
+        */}
         <button className={tab === 'faq' ? 'on' : ''} onClick={() => setTab('faq')}>
           ❓ How It Works
         </button>
       </nav>
       {tab === 'markets' && <MarketsView markets={markets} status={status} dataYear={dataYear} onSaveProspect={saveMarketProspect} />}
-      {tab === 'property' && <PropertyView onSaveProspect={savePropertyProspect} />}
-      {tab === 'prospects' && <ProspectsView />}
+      {/* tab === 'property' && <PropertyView onSaveProspect={savePropertyProspect} /> — hidden until activated */}
+      {/* tab === 'prospects' && <ProspectsView /> — hidden until activated */}
       {tab === 'faq' && <FaqView />}
       {toast && <div className="toast">{toast}</div>}
     </main>
